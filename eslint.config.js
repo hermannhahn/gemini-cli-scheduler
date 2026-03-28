@@ -1,11 +1,14 @@
 const js = require("@eslint/js");
+const tsESLint = require("@typescript-eslint/eslint-plugin");
+const tsParser = require("@typescript-eslint/parser");
 
 module.exports = [
-  js.configs.recommended,
   {
+    files: ["src/**/*.ts"],
     languageOptions: {
-      ecmaVersion: 2024,
-      sourceType: "commonjs",
+      parser: tsParser,
+      sourceType: "module",
+      ecmaVersion: "latest",
       globals: {
         require: "readonly",
         module: "readonly",
@@ -16,13 +19,18 @@ module.exports = [
         setInterval: "readonly",
         clearInterval: "readonly",
         setTimeout: "readonly",
-        clearTimeout: "readonly"
+        clearTimeout: "readonly",
+        NodeJS: "readonly"
       }
     },
+    plugins: {
+      "@typescript-eslint": tsESLint,
+    },
     rules: {
+      ...tsESLint.configs.recommended.rules,
       "no-unused-vars": "warn",
       "no-console": "off",
-      "no-undef": "warn"
-    }
-  }
+      "no-undef": "warn",
+    },
+  },
 ];

@@ -1,6 +1,6 @@
 {
 	"name": "gemini-cli-scheduler",
-	"version": "0.8.5",
+	"version": "0.8.7",
 	"description": "Task scheduling extension for Gemini CLI",
 	"keywords": [
 		"Scheduler",
@@ -20,14 +20,14 @@
 	"type": "commonjs",
 	"main": "tool_code.js",
 	"scripts": {
-		"lint": "eslint .",
+		"lint": "eslint 'src/**/*.ts' --fix",
 		"version": "node scripts/update-version.js && git add .",
 		"postversion": "git push origin main --follow-tags && npm run push:release",
 		"cleanup-releases": "node scripts/cleanup-releases.js",
 		"push:release": "node -e \"const v = require('./package.json').version; require('child_process').execSync('gh release create v' + v + ' --generate-notes || echo \\\"Release already exists\\\"', {stdio: 'inherit'})\"",
 		"push:commit": "node -e \"const v = require('./package.json').version; require('child_process').execSync('git add . && git commit -m \\\"v' + v + '\\\" && git push', {stdio: 'inherit'})\"",
 		"update": "gemini extensions update gemini-cli-scheduler",
-		"deploy": "npm run lint && npm version patch -m \"v%s\" --force && npm run cleanup-releases && npm run update"
+		"deploy": "npm run lint && npx webpack && version=$(node -p \"require('./package.json').version\") && echo 'PASS!' && npm version patch -m \"v%s\" --force && npm run cleanup-releases && npm run update"
 	},
 	"gemini-dependencies": {
 		"gemini-cli-scheduler": "https://github.com/hermannhahn/gemini-cli-scheduler",
@@ -38,8 +38,14 @@
 		"node-schedule": "^2.1.1"
 	},
 	"devDependencies": {
-		"@eslint/js": "^9.39.4",
+		"@eslint/js": "^10.0.1",
 		"@types/node": "^20.19.37",
-		"typescript": "^5.9.3"
+		"@types/node-schedule": "^2.1.8",
+		"eslint": "^10.0.3",
+		"ts-loader": "^9.5.4",
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.57.1",
+		"webpack": "^5.105.2",
+		"webpack-cli": "^6.0.1"
 	}
 }

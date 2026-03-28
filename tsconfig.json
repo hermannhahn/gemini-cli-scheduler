@@ -1,0 +1,16 @@
+{
+	"compilerOptions": {
+		"module": "commonjs",
+		"lib": ["ESNext"],
+		"target": "es2018",
+		"moduleResolution": "node",
+		"ignoreDeprecations": "5.0",
+		"outDir": "./",
+		"rootDir": "src/",
+		"strict": true,
+		"esModuleInterop": true,
+		"sourceMap": false
+	},
+	"include": ["src/**/*"],
+	"exclude": ["node_modules", "dist", "docs", "scripts", "logs", ".vscode"]
+}
