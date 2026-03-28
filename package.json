@@ -21,13 +21,13 @@
 	"main": "tool_code.js",
 	"scripts": {
 		"lint": "eslint 'src/**/*.ts' --fix",
+		"update:version": "npm run lint && npm version patch --no-git-tag-version",
 		"version": "node scripts/update-version.js && git add .",
-		"postversion": "git push origin main --follow-tags && npm run push:release",
+		"publish:release": "git push origin main --follow-tags && npm run push:release",
 		"cleanup-releases": "node scripts/cleanup-releases.js",
-		"push:release": "node -e \"const v = require('./package.json').version; require('child_process').execSync('gh release create v' + v + ' --generate-notes || echo \\\"Release already exists\\\"', {stdio: 'inherit'})\"",
-		"push:commit": "node -e \"const v = require('./package.json').version; require('child_process').execSync('git add . && git commit -m \\\"v' + v + '\\\" && git push', {stdio: 'inherit'})\"",
-		"update": "npm version patch -m \"v%s\" --force && npm run cleanup-releases && gemini extensions update gemini-cli-scheduler",
-		"deploy": "npm run lint && npx webpack && echo 'PASS!' && npm run update"
+		"push:release": "node -e \"const v = require('./package.json').version; require('child_process').execSync('gh release create v' + v + ' --generate-notes', {stdio: 'inherit'})\"",
+		"update": "echo 'Y' | gemini extension update gemini-cli-scheduler",
+		"deploy": "git checkout main && git pull origin main && npm run lint && npx webpack && node -e \"const v = require('./package.json').version; require('child_process').execSync('git tag v' + v + ' && git push origin v' + v, {stdio: 'inherit'})\" && npm run push:release && npm run cleanup-releases && npm run update && git checkout development"
 	},
 	"gemini-dependencies": {
 		"gemini-cli-scheduler": "https://github.com/hermannhahn/gemini-cli-scheduler",
