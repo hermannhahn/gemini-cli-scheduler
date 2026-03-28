@@ -1,6 +1,6 @@
 {
 	"name": "gemini-cli-scheduler",
-	"version": "0.8.7",
+	"version": "0.8.8",
 	"description": "Task scheduling extension for Gemini CLI",
 	"keywords": [
 		"Scheduler",
@@ -26,8 +26,8 @@
 		"cleanup-releases": "node scripts/cleanup-releases.js",
 		"push:release": "node -e \"const v = require('./package.json').version; require('child_process').execSync('gh release create v' + v + ' --generate-notes || echo \\\"Release already exists\\\"', {stdio: 'inherit'})\"",
 		"push:commit": "node -e \"const v = require('./package.json').version; require('child_process').execSync('git add . && git commit -m \\\"v' + v + '\\\" && git push', {stdio: 'inherit'})\"",
-		"update": "gemini extensions update gemini-cli-scheduler",
-		"deploy": "npm run lint && npx webpack && version=$(node -p \"require('./package.json').version\") && echo 'PASS!' && npm version patch -m \"v%s\" --force && npm run cleanup-releases && npm run update"
+		"update": "npm version patch -m \"v%s\" --force && npm run cleanup-releases && gemini extensions update gemini-cli-scheduler",
+		"deploy": "npm run lint && npx webpack && echo 'PASS!' && npm run update"
 	},
 	"gemini-dependencies": {
 		"gemini-cli-scheduler": "https://github.com/hermannhahn/gemini-cli-scheduler",
