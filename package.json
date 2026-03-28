@@ -20,7 +20,7 @@
 	"type": "commonjs",
 	"main": "tool_code.js",
 	"scripts": {
-		"lint": "eslint . --ext .js",
+		"lint": "eslint .",
 		"version": "node scripts/update-version.js && git add .",
 		"postversion": "git push origin main --follow-tags && npm run push:release",
 		"cleanup-releases": "node scripts/cleanup-releases.js",
@@ -36,5 +36,10 @@
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.28.0",
 		"node-schedule": "^2.1.1"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.39.4",
+		"@types/node": "^20.19.37",
+		"typescript": "^5.9.3"
 	}
 }

@@ -41,8 +41,7 @@ function detectEnabledExtensions() {
 		for (const section of sections) {
 			if (!section.trim()) continue;
 
-			const lines = section.split("
-");
+			const lines = section.split("\n");
 			const firstLine = lines[0].trim();
 			const nameMatch = firstLine.match(/^([^\s(]+)/);
 			if (!nameMatch) continue;
@@ -287,11 +286,7 @@ const server = new Server(
 	},
 	{
 		capabilities: {
-			tools: {
-				supported: true,
-				description:
-					"Provides task scheduling and management capabilities within Gemini CLI.",
-			},
+			tools: {},
 		},
 	},
 );
@@ -396,7 +391,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 			const id = Math.random().toString(36).substring(2, 9);
 
 			let taskExtensions = extensions;
-			if (!taskExtensions || taskExtensions.length === 0) {
+			if (!Array.isArray(taskExtensions) || taskExtensions.length === 0) {
 				taskExtensions = detectEnabledExtensions();
 			}
 
