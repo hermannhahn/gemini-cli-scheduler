@@ -10,25 +10,18 @@ Uma extensão MCP para o Gemini CLI que permite agendar lembretes e tarefas auto
 
 ## 🛠️ Instalação
 
-A extensão é configurada automaticamente através do arquivo `package.json` do seu projeto usando o script `terminal.js`.
+$ gemini extensions install <https://github.com/hermannhahn/gemini-cli-scheduler>
 
 ## 📖 Como Usar
 
 ### Agendar uma tarefa
-```
-Agende um lembrete para 2026-03-27T23:50:00 com a mensagem "Revisar o código do scheduler"
-```
+
+> Agende um lembrete para dia 23 às 8 da manhã com a mensagem "Revisar o código do scheduler"
 
 ### Listar tarefas
-```
-Liste todas as tarefas agendadas no scheduler
-```
+
+> Liste todas as tarefas agendadas no scheduler
 
 ### Cancelar uma tarefa
-```
-Cancele a tarefa com ID 'abc1234'
-```
 
-## ⚙️ Arquitetura
-
-O `tool_code.js` mantém um motor de agendamento em background (`node-schedule`). Quando uma tarefa é disparada, ela é removida do `tasks.json` local e executada via shell em um novo processo do Gemini CLI em modo headless.
+> Cancele a tarefa com ID 'abc1234'
