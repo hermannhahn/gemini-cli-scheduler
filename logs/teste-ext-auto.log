@@ -1,0 +1,58 @@
+--- START TASK: teste-ext-auto (2026-03-28T03:56:07.001Z) ---
+Prompt: Diga "Auto-descoberta concluída" e liste as extensões carregadas.
+
+[STDERR] YOLO mode is enabled. All tool calls will be automatically approved.
+Loaded cached credentials.
+YOLO mode is enabled. All tool calls will be automatically approved.
+Loading extension: chrome-devtools-mcp
+Loading extension: conductor
+Loading extension: gemini-cli-jules
+Loading extension: gemini-cli-scheduler
+Loading extension: gemini-cli-voice
+Loading extension: github
+Loading extension: google-workspace
+Loading extension: nanobanana
+Scheduling MCP context refresh...
+Executing MCP context refresh...
+Registering notification handlers for server 'voice'. Capabilities: { tools: {} }
+Server 'voice' has tools but did not declare 'listChanged' capability. Listening anyway for robustness...
+MCP context refresh complete.
+[MCP error] Error during discovery for MCP server 'github': Streamable HTTP error: Error POSTing to endpoint: bad request: Authorization header is badly formatted
+ StreamableHTTPError: Streamable HTTP error: Error POSTing to endpoint: bad request: Authorization header is badly formatted
+
+    at StreamableHTTPClientTransport.send (file:///home/hermann/.nvm/versions/node/v22.17.0/lib/node_modules/@google/gemini-cli/node_modules/@modelcontextprotocol/sdk/dist/esm/client/streamableHttp.js:364:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  code: 400
+}
+Registering notification handlers for server 'julesServer'. Capabilities: { tools: { listChanged: true } }
+Server 'julesServer' supports tool updates. Listening for changes...
+Registering notification handlers for server 'nanobanana'. Capabilities: { tools: {} }
+Server 'nanobanana' has tools but did not declare 'listChanged' capability. Listening anyway for robustness...
+Registering notification handlers for server 'scheduler'. Capabilities: { tools: {} }
+Server 'scheduler' has tools but did not declare 'listChanged' capability. Listening anyway for robustness...
+Registering notification handlers for server 'google-workspace'. Capabilities: { tools: { listChanged: true } }
+Server 'google-workspace' supports tool updates. Listening for changes...
+Registering notification handlers for server 'chrome-devtools'. Capabilities: { logging: {}, tools: { listChanged: true } }
+Server 'chrome-devtools' supports tool updates. Listening for changes...
+Scheduling MCP context refresh...
+Executing MCP context refresh...
+MCP context refresh already in progress, queuing trailing execution.
+MCP context refresh already in progress, queuing trailing execution.
+MCP context refresh already in progress, queuing trailing execution.
+MCP context refresh already in progress, queuing trailing execution.
+MCP context refresh already in progress, queuing trailing execution.
+MCP context refresh already in progress, queuing trailing execution.
+MCP context refresh complete.
+Coalescing burst refresh requests (300ms delay)...
+Executing MCP context refresh...
+MCP context refresh complete.
+MCP issues detected. Run /mcp list for status.Auto-descoberta concluída. As extensões carregadas são:
+
+1. **Conductor**
+2. **Jules**
+3. **Google Workspace** (incluindo Google Docs, Sheets, Slides, Calendar, Gmail, Chat e People)
+4. **Nano Banana** (Geração de Imagens)
+5. **Gemini CLI Scheduler** (esta extensão atual)
+6. **Chrome DevTools** (incluindo Troubleshooting, LCP, CLI e A11y)
+
+--- END TASK: teste-ext-auto (Exit Code: 0) at 2026-03-28T03:56:34.346Z ---

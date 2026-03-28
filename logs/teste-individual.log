@@ -1,0 +1,53 @@
+--- START TASK: teste-individual (2026-03-28T03:46:42.011Z) ---
+Prompt: Olá, este log deve ser exclusivo! Mostre a data e hora atual.
+
+[STDERR] YOLO mode is enabled. All tool calls will be automatically approved.
+Loaded cached credentials.
+YOLO mode is enabled. All tool calls will be automatically approved.
+Loading extension: chrome-devtools-mcp
+Loading extension: conductor
+Loading extension: gemini-cli-jules
+Loading extension: gemini-cli-scheduler
+Loading extension: gemini-cli-voice
+Loading extension: github
+Loading extension: google-workspace
+Loading extension: nanobanana
+Scheduling MCP context refresh...
+Executing MCP context refresh...
+Registering notification handlers for server 'voice'. Capabilities: { tools: {} }
+Server 'voice' has tools but did not declare 'listChanged' capability. Listening anyway for robustness...
+MCP context refresh complete.
+Registering notification handlers for server 'julesServer'. Capabilities: { tools: { listChanged: true } }
+[STDERR] Server 'julesServer' supports tool updates. Listening for changes...
+Registering notification handlers for server 'scheduler'. Capabilities: { tools: {} }
+Server 'scheduler' has tools but did not declare 'listChanged' capability. Listening anyway for robustness...
+Registering notification handlers for server 'nanobanana'. Capabilities: { tools: {} }
+Server 'nanobanana' has tools but did not declare 'listChanged' capability. Listening anyway for robustness...
+Registering notification handlers for server 'google-workspace'. Capabilities: { tools: { listChanged: true } }
+Server 'google-workspace' supports tool updates. Listening for changes...
+Registering notification handlers for server 'chrome-devtools'. Capabilities: { logging: {}, tools: { listChanged: true } }
+Server 'chrome-devtools' supports tool updates. Listening for changes...
+Scheduling MCP context refresh...
+Executing MCP context refresh...
+MCP context refresh already in progress, queuing trailing execution.
+MCP context refresh already in progress, queuing trailing execution.
+MCP context refresh already in progress, queuing trailing execution.
+MCP context refresh complete.
+Coalescing burst refresh requests (300ms delay)...
+[MCP error] Error during discovery for MCP server 'github': Streamable HTTP error: Error POSTing to endpoint: bad request: Authorization header is badly formatted
+ StreamableHTTPError: Streamable HTTP error: Error POSTing to endpoint: bad request: Authorization header is badly formatted
+
+    at StreamableHTTPClientTransport.send (file:///home/hermann/.nvm/versions/node/v22.17.0/lib/node_modules/@google/gemini-cli/node_modules/@modelcontextprotocol/sdk/dist/esm/client/streamableHttp.js:364:23)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5) {
+  code: 400
+}
+MCP context refresh already in progress, queuing trailing execution.
+MCP context refresh already in progress, queuing trailing execution.
+MCP context refresh already in progress, queuing trailing execution.
+Executing MCP context refresh...
+MCP context refresh complete.
+MCP issues detected. Run /mcp list for status.A data e hora atual (America/Sao_Paulo) são:
+
+**28 de março de 2026, 00:47:07**
+
+--- END TASK: teste-individual (Exit Code: 0) at 2026-03-28T03:47:15.642Z ---

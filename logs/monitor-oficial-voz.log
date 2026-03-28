@@ -1,0 +1,31 @@
+--- START TASK: monitor-oficial-voz (2026-03-28T04:28:09.010Z) ---
+Prompt: Verifique a situação do servidor oficial executando 'node api/api.js monitor oficial' e 'node api/api.js logs oficial' (limitado a 10 linhas). Analise o RCL, Energia e Creeps, e use a ferramenta de voz para emitir um relatório resumido e claro sobre o estado da colônia em português.
+Target Extensions: chrome-devtools-mcp, gemini-cli-voice
+
+[STDERR] YOLO mode is enabled. All tool calls will be automatically approved.
+Loaded cached credentials.
+YOLO mode is enabled. All tool calls will be automatically approved.
+Loading extension: chrome-devtools-mcp
+Loading extension: gemini-cli-voice
+Registering notification handlers for server 'voice'. Capabilities: { tools: {} }
+Server 'voice' has tools but did not declare 'listChanged' capability. Listening anyway for robustness...
+Registering notification handlers for server 'chrome-devtools'. Capabilities: { logging: {}, tools: { listChanged: true } }
+Server 'chrome-devtools' supports tool updates. Listening for changes...
+Scheduling MCP context refresh...
+Executing MCP context refresh...
+MCP context refresh already in progress, queuing trailing execution.
+MCP context refresh complete.
+Coalescing burst refresh requests (300ms delay)...
+Executing MCP context refresh...
+MCP context refresh complete.
+Vou verificar o status atual da colônia no servidor oficial.
+
+[STDERR] MCP ERROR (voice)[ERROR] MCP ERROR (voice)
+Relatório da Colônia (Servidor Oficial):
+- **RCL:** 5 (17% de progresso)
+- **Energia:** 192/1800 (Baixa reserva, ~10.7%)
+- **Creeps:** 14 ativos
+
+A colônia está estável no Nível 5, mas a reserva de energia está reduzida. Os logs capturados não apontaram erros fatais imediatos no curto período de observação.
+
+--- END TASK: monitor-oficial-voz (Exit Code: 0) at 2026-03-28T04:29:53.952Z ---

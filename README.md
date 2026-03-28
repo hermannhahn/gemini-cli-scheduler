@@ -1,15 +1,34 @@
 # Gemini CLI Scheduler Extension
 
-This extension adds the `scheduler` tool to the Gemini CLI, allowing the model to manage and execute scheduled tasks.
+Uma extensão MCP para o Gemini CLI que permite agendar lembretes e tarefas automatizadas.
 
-## How It Works
+## 🚀 Funcionalidades
 
-The extension operates as a native **MCP (Model Context Protocol)** extension, meaning it integrates directly with the Gemini CLI's core functionality. The `scheduler` tool is defined in `tool_code.js`, which handles the logic for scheduling tasks and communicating with the MCP server. This design ensures that the extension can manage tasks efficiently while adhering to the MCP standards for tool development.
+- **Agendamento Flexível:** Agende mensagens para o futuro usando `schedule_task`.
+- **Persistência Local:** As tarefas são salvas em um arquivo `tasks.json` na raiz do seu projeto atual, permitindo listas independentes por workspace.
+- **Execução Autônoma:** Quando o horário atinge, o scheduler executa `gemini --prompt "sua mensagem"`, permitindo que o modelo tome ações e use outras extensões instaladas.
 
-## Installation
+## 🛠️ Instalação
 
-You can install this extension directly from the repository:
+A extensão é configurada automaticamente através do arquivo `package.json` do seu projeto usando o script `terminal.js`.
 
-```bash
-gemini extensions install https://github.com/hermannhahn/gemini-cli-scheduler
+## 📖 Como Usar
+
+### Agendar uma tarefa
 ```
+Agende um lembrete para 2026-03-27T23:50:00 com a mensagem "Revisar o código do scheduler"
+```
+
+### Listar tarefas
+```
+Liste todas as tarefas agendadas no scheduler
+```
+
+### Cancelar uma tarefa
+```
+Cancele a tarefa com ID 'abc1234'
+```
+
+## ⚙️ Arquitetura
+
+O `tool_code.js` mantém um motor de agendamento em background (`node-schedule`). Quando uma tarefa é disparada, ela é removida do `tasks.json` local e executada via shell em um novo processo do Gemini CLI em modo headless.

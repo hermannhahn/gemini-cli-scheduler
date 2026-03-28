@@ -1,7 +1,6 @@
 {
 	"name": "gemini-cli-scheduler",
-	"version": "0.0.1",
-	"description": "Task scheduling extension for Gemini CLI",
+	"version": "0.8.0",	"description": "Task scheduling extension for Gemini CLI",
 	"keywords": [
 		"Scheduler",
 		"Gemini",
@@ -32,5 +31,9 @@
 	"gemini-dependencies": {
 		"gemini-cli-scheduler": "https://github.com/hermannhahn/gemini-cli-scheduler",
 		"gemini-cli-voice": "https://github.com/hermannhahn/gemini-cli-voice"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.28.0",
+		"node-schedule": "^2.1.1"
 	}
 }

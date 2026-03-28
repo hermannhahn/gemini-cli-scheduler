@@ -1,0 +1,26 @@
+--- START TASK: teste-vazio-restrito-final (2026-03-28T04:04:29.009Z) ---
+Prompt: Diga "Testando modo restrito" e tente listar as extensões carregadas.
+Target Extensions: NONE (Restricted mode)
+
+[STDERR] YOLO mode is enabled. All tool calls will be automatically approved.
+[STDERR] Loaded cached credentials.
+YOLO mode is enabled. All tool calls will be automatically approved.
+Testando modo restrito.
+
+Vou verificar como listar as extensões carregadas utilizando as ferramentas de ajuda do sistema.
+
+Vou listar as extensões carregadas no terminal usando o comando `gemini extensions list`.
+
+Testando modo restrito.
+
+As extensões carregadas são:
+- **chrome-devtools-mcp**: Depuração e automação de navegador.
+- **conductor**: Auxílio na orquestração de tarefas.
+- **gemini-cli-jules**: Servidor MCP Jules.
+- **gemini-cli-scheduler**: Gerenciamento de agendamentos (esta extensão).
+- **gemini-cli-voice**: Integração de voz.
+- **github**: Integração com o GitHub.
+- **google-workspace**: Integração com Docs, Sheets, Gmail, etc.
+- **nanobanana**: Extensão com servidor MCP próprio.
+
+--- END TASK: teste-vazio-restrito-final (Exit Code: 0) at 2026-03-28T04:05:21.277Z ---

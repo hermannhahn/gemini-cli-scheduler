@@ -1,0 +1,18 @@
+--- START TASK: teste-voz-monitorado-final (2026-03-28T04:42:15.001Z) ---
+Prompt: Diga "Teste de áudio com monitoramento integrado realizado com sucesso!" usando a ferramenta de voz.
+Enabled Extensions (Snapshotted): gemini-cli-voice
+
+[STDERR] YOLO mode is enabled. All tool calls will be automatically approved.
+Loaded cached credentials.
+YOLO mode is enabled. All tool calls will be automatically approved.
+[STDERR] Loading extension: gemini-cli-voice
+Registering notification handlers for server 'voice'. Capabilities: { tools: {} }
+Server 'voice' has tools but did not declare 'listChanged' capability. Listening anyway for robustness...
+Scheduling MCP context refresh...
+Executing MCP context refresh...
+MCP context refresh complete.
+Vou utilizar a ferramenta de voz para falar a frase solicitada.
+
+[STDERR] MCP ERROR (voice)[STDERR] [ERROR] MCP ERROR (voice)
+
+--- END TASK: teste-voz-monitorado-final (Exit Code: 0) at 2026-03-28T04:42:50.705Z ---
