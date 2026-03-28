@@ -288,8 +288,9 @@ function cancelTask(idOrName: string) {
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.11",
+		version: "0.8.13",
 	},
+
 	{
 		capabilities: {
 			tools: {},
@@ -357,7 +358,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 			},
 			{
 				name: "list_tasks",
-				description: "List all tasks with status and log info.",
+				description: "List all tasks with status and log info. Also returns current system time.",
+				inputSchema: {
+					type: "object",
+					properties: {},
+				},
+			},
+			{
+				name: "get_system_time",
+				description: "Returns the current system time in YYYY-MM-DD HH:MM:SS format.",
 				inputSchema: {
 					type: "object",
 					properties: {},
@@ -466,9 +475,24 @@ ${result.logs}`,
 			};
 		}
 		case "list_tasks": {
+			const currentTime = new Date().toISOString().replace("T", " ").substring(0, 19);
 			return {
 				content: [
-					{ type: "text", text: JSON.stringify(tasks, null, 2) },
+					{ 
+						type: "text", 
+						text: JSON.stringify({ 
+							currentTime,
+							tasks 
+						}, null, 2) 
+					},
+				],
+			};
+		}
+		case "get_system_time": {
+			const currentTime = new Date().toISOString().replace("T", " ").substring(0, 19);
+			return {
+				content: [
+					{ type: "text", text: `Current system time: ${currentTime}` },
 				],
 			};
 		}
