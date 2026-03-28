@@ -35,4 +35,4 @@ Professional MCP extension for autonomous task scheduling in Gemini CLI, with in
 - [ ] **History Interface:** Improve the display of the completed task list.
 - [ ] **Retry Logic:** Option to re-execute tasks that failed or were missed.
 - [ ] **Listing Filters:** List only `completed` or `pending` tasks.
-- [ ] **Timezone Handling:** Improve automatic detection of local timezone.
+- [x] **Timezone Handling:** Improve automatic detection of local timezone.
