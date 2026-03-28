@@ -19,7 +19,8 @@ module.exports = [
         setInterval: "readonly",
         clearInterval: "readonly",
         setTimeout: "readonly",
-        clearTimeout: "readonly"
+        clearTimeout: "readonly",
+        NodeJS: "readonly"
       }
     },
     plugins: {
