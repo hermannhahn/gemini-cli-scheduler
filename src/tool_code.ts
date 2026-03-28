@@ -6,18 +6,18 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import fs from "fs";
 import path from "path";
+import os from "os";
 import schedule from "node-schedule";
 import { spawn, execSync } from "child_process";
 
-// Em ambientes Node.js com CommonJS (que é o que o webpack/tsconfig está gerando),
-// __dirname está disponível globalmente.
-const EXTENSION_DIR = __dirname;
-const PERSISTENCE_PATH =
-	process.env.SCHEDULER_PATH || path.join(EXTENSION_DIR, "tasks.json");
-const LOGS_DIR = path.join(EXTENSION_DIR, "logs");
-const SYSTEM_LOG_PATH = path.join(EXTENSION_DIR, "scheduler.log");
+// Persistent directory for all users/environments
+const HOME_DIR = os.homedir();
+const PERSISTENT_GEMINI_DIR = path.join(HOME_DIR, ".gemini", "extensions", "gemini-cli-scheduler");
+const PERSISTENCE_PATH = process.env.SCHEDULER_PATH || path.join(PERSISTENT_GEMINI_DIR, "tasks.json");
+const LOGS_DIR = path.join(PERSISTENT_GEMINI_DIR, "logs");
+const SYSTEM_LOG_PATH = path.join(PERSISTENT_GEMINI_DIR, "scheduler.log");
 
-// Ensure the logs directory exists
+// Ensure the persistent directory and logs directory exist
 if (!fs.existsSync(LOGS_DIR)) {
 	fs.mkdirSync(LOGS_DIR, { recursive: true });
 }
@@ -288,7 +288,7 @@ function cancelTask(idOrName: string) {
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.5",
+		version: "0.8.11",
 	},
 	{
 		capabilities: {
