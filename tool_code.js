@@ -7,7 +7,6 @@ const {
 const fs = require("fs");
 const path = require("path");
 const schedule = require("node-schedule");
-const os = require("os");
 const { spawn, execSync } = require("child_process");
 
 const EXTENSION_DIR = __dirname;
