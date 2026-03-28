@@ -1,6 +1,6 @@
 {
 	"name": "gemini-cli-scheduler",
-	"version": "0.8.5",
+	"version": "0.8.6",
 	"description": "Task scheduling extension for Gemini CLI",
 	"keywords": [
 		"Scheduler",
@@ -40,6 +40,8 @@
 	"devDependencies": {
 		"@eslint/js": "^9.39.4",
 		"@types/node": "^20.19.37",
+		"@typescript-eslint/eslint-plugin": "^8.57.2",
+		"@typescript-eslint/parser": "^8.57.2",
 		"typescript": "^5.9.3"
 	}
 }

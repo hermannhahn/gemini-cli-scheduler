@@ -1,6 +1,6 @@
 {
 	"name": "gemini-cli-scheduler",
-	"version": "0.8.5",
+	"version": "0.8.6",
 	"description": "Task scheduling extension for Gemini CLI",
 	"mcpServers": {
 		"scheduler": {
