@@ -1,38 +1,38 @@
-# gemini-cli-scheduler - Plano de Ação
+# gemini-cli-scheduler - Action Plan
 
-## 🎯 Objetivo
-Extensão MCP profissional para agendamento de tarefas autônomas no Gemini CLI, com logs individuais, histórico de execução e suporte a múltiplos executores (Gemini/Jules).
+## 🎯 Objective
+Professional MCP extension for autonomous task scheduling in Gemini CLI, with individual logs, execution history, and support for multiple executors (Gemini/Jules).
 
-## 🛠️ Arquitetura (v0.8.0)
-1.  **Persistence:** Tarefas salvas em `tasks.json` no diretório da extensão.
-2.  **Individual Logging:** Logs de cada tarefa salvos em `logs/[taskName].log`.
-3.  **System Logging:** Log geral do servidor em `scheduler.log`.
-4.  **Executors:** Suporte a `Gemini` (padrão) e `Jules` (sub-agente especializado).
-5.  **Status Tracking:** Estados `pending`, `completed`, `cancelled` e `missed`.
+## 🛠️ Architecture (v0.8.0)
+1.  **Persistence:** Tasks saved to `tasks.json` in the extension's directory.
+2.  **Individual Logging:** Logs for each task saved to `logs/[taskName].log`.
+3.  **System Logging:** General server log in `scheduler.log`.
+4.  **Executors:** Support for `Gemini` (default) and `Jules` (specialized sub-agent).
+5.  **Status Tracking:** States `pending`, `completed`, `cancelled`, and `missed`.
 
-## 📋 Tarefas Concluídas
+## 📋 Completed Tasks
 
-### Fase 1: Infraestrutura e Configuração
-- [x] Persistência isolada no diretório da extensão (`EXTENSION_DIR`).
-- [x] Sistema de logs individuais para cada tarefa.
-- [x] Isolamento de dados: todos os arquivos ficam dentro da pasta da extensão.
+### Phase 1: Infrastructure and Configuration
+- [x] Isolated persistence in the extension directory (`EXTENSION_DIR`).
+- [x] Individual logging system for each task.
+- [x] Data isolation: all files remain within the extension's folder.
 
-### Fase 2: Ferramentas MCP (v0.8.0)
-- [x] **schedule_task**: Suporte a `monitor` (espera integrada) e `useJules` (sub-agente).
-- [x] **list_tasks**: Exibe histórico completo com status e caminhos de log.
-- [x] **cancel_task**: Suporte a cancelamento de tarefas pendentes.
-- [x] **monitor_task**: Monitoramento inteligente em tempo real (aguarda conclusão).
-- [x] **check_task_results**: Leitura de logs de tarefas finalizadas.
+### Phase 2: MCP Tools (v0.8.0)
+- [x] **schedule_task**: Support for `monitor` (integrated wait) and `useJules` (sub-agent).
+- [x] **list_tasks**: Displays complete history with status and log paths.
+- [x] **cancel_task**: Support for cancelling pending tasks.
+- [x] **monitor_task**: Intelligent real-time monitoring (waits for completion).
+- [x] **check_task_results**: Reading logs of finished tasks.
 
-### Fase 3: Motor de Execução e Segurança
-- [x] Execução headless via `spawn` com redirecionamento de logs.
-- [x] **Controle de Extensões:** Snapshoting automático de extensões habilitadas ou controle explícito.
-- [x] **Modo Restrito por Padrão:** Tarefas sem extensões não acessam ferramentas externas por segurança.
-- [x] **Integração com Jules:** Possibilidade de delegar tarefas para o sub-agente especializado.
+### Phase 3: Execution Engine and Security
+- [x] Headless execution via `spawn` with log redirection.
+- [x] **Extension Control:** Automatic snapshotting of enabled extensions or explicit control.
+- [x] **Restricted Mode by Default:** Tasks without extensions do not access external tools for security.
+- [x] **Jules Integration:** Ability to delegate tasks to the specialized sub-agent.
 
-## 🚀 Próximos Passos (Roadmap)
-- [ ] **Limpeza Automática:** Ferramenta para limpar logs antigos ou tarefas completadas.
-- [ ] **Interface de Histórico:** Melhorar a visualização da lista de tarefas completadas.
-- [ ] **Retry Logic:** Opção para re-executar tarefas que falharam ou foram perdidas.
-- [ ] **Filtros na Listagem:** Listar apenas tarefas `completed` ou `pending`.
-- [ ] **Tratamento de Timezone:** Melhorar a detecção automática do fuso horário local.
+## 🚀 Next Steps (Roadmap)
+- [ ] **Automatic Cleanup:** Tool to clear old logs or completed tasks.
+- [ ] **History Interface:** Improve the display of the completed task list.
+- [ ] **Retry Logic:** Option to re-execute tasks that failed or were missed.
+- [ ] **Listing Filters:** List only `completed` or `pending` tasks.
+- [ ] **Timezone Handling:** Improve automatic detection of local timezone.

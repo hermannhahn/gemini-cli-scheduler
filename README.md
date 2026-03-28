@@ -1,29 +1,28 @@
 # Gemini CLI Scheduler Extension
 
-Uma extensão MCP para o Gemini CLI que permite agendar lembretes e tarefas automatizadas.
+An MCP extension for Gemini CLI that allows scheduling reminders and automated tasks.
 
-## 🚀 Funcionalidades
+## 🚀 Features
 
-- **Agendamento Flexível:** Agende mensagens para o futuro usando `schedule_task`.
-- **Persistência Local:** As tarefas são salvas em um arquivo `tasks.json` na raiz do seu projeto atual, permitindo listas independentes por workspace.
-- **Execução Autônoma:** Quando o horário atinge, o scheduler executa `gemini --prompt "sua mensagem"`, permitindo que o modelo tome ações e use outras extensões instaladas.
+- **Flexible Scheduling:** Schedule messages for the future using `schedule_task`.
+- **Continuous Monitoring:** Request continuous monitoring to await the result of the scheduled task.
+- **Local Persistence:** Tasks are saved to a `tasks.json` file in your current project's root, allowing for independent lists per workspace.
+- **Autonomous Execution:** When the time is reached, the scheduler executes `gemini --prompt "your message"`, allowing the model to take actions and use other installed extensions.
 
-## 🛠️ Instalação
+## 📖 How to Use
 
-```bash
-gemini extensions install https://github.com/hermannhahn/gemini-cli-scheduler
-```
+### Schedule a Task
 
-## 📖 Como Usar
+> Schedule a reminder for the 23rd at 8 AM with the message "Review scheduler code"
 
-### Agendar uma tarefa
+### List Tasks
 
-> Agende um lembrete para dia 23 às 8 da manhã com a mensagem "Revisar o código do scheduler"
+> List all scheduled tasks in the scheduler
 
-### Listar tarefas
+### Cancel a Task
 
-> Liste todas as tarefas agendadas no scheduler
+> Cancel the task with ID 'abc1234'
 
-### Cancelar uma tarefa
+### Monitoring and Decision Making
 
-> Cancele a tarefa com ID 'abc1234'
+> Monitor google.com every 5 minutes and report any downtime.

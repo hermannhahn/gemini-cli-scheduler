@@ -17,7 +17,7 @@ const PERSISTENCE_PATH =
 const LOGS_DIR = path.join(EXTENSION_DIR, "logs");
 const SYSTEM_LOG_PATH = path.join(EXTENSION_DIR, "scheduler.log");
 
-// Garantir que a pasta de logs existe
+// Ensure the logs directory exists
 if (!fs.existsSync(LOGS_DIR)) {
 	fs.mkdirSync(LOGS_DIR, { recursive: true });
 }
@@ -27,7 +27,8 @@ const activeJobs = new Map();
 
 function logToFile(message, specificLogPath = SYSTEM_LOG_PATH) {
 	const timestamp = new Date().toISOString();
-	const logMessage = `[${timestamp}] ${message}\n`;
+	const logMessage = `[${timestamp}] ${message}
+`;
 	fs.appendFileSync(specificLogPath, logMessage);
 }
 
@@ -40,7 +41,8 @@ function detectEnabledExtensions() {
 		for (const section of sections) {
 			if (!section.trim()) continue;
 
-			const lines = section.split("\n");
+			const lines = section.split("
+");
 			const firstLine = lines[0].trim();
 			const nameMatch = firstLine.match(/^([^\s(]+)/);
 			if (!nameMatch) continue;
@@ -130,29 +132,37 @@ function executeHeadless(task) {
 	const logStream = fs.createWriteStream(taskLogPath, { flags: "w" });
 	const timestamp = new Date().toISOString();
 
-	logStream.write(`--- START TASK: ${task.name} (${timestamp}) ---\n`);
+	logStream.write(`--- START TASK: ${task.name} (${timestamp}) ---
+`);
 
 	let finalPrompt = task.message;
 	let finalExtensions = task.extensions || [];
 
 	if (task.useJules) {
-		logStream.write(`Executor: Jules (Sub-agent)\n`);
-		finalPrompt = `Aja como o sub-agente Jules e execute a seguinte tarefa: ${task.message}`;
+		logStream.write(`Executor: Jules (Sub-agent)
+`);
+		finalPrompt = `Act as the Jules sub-agent and execute the following task: ${task.message}`;
 		if (!finalExtensions.includes("gemini-cli-jules")) {
 			finalExtensions.push("gemini-cli-jules");
 		}
 	} else {
-		logStream.write(`Executor: Gemini (Standard)\n`);
+		logStream.write(`Executor: Gemini (Standard)
+`);
 	}
 
-	logStream.write(`Prompt: ${finalPrompt}\n`);
+	logStream.write(`Prompt: ${finalPrompt}
+`);
 
 	if (finalExtensions.length > 0) {
 		logStream.write(
-			`Enabled Extensions: ${finalExtensions.join(", ")}\n\n`,
+			`Enabled Extensions: ${finalExtensions.join(", ")}
+
+`,
 		);
 	} else {
-		logStream.write(`Enabled Extensions: NONE (Restricted mode)\n\n`);
+		logStream.write(`Enabled Extensions: NONE (Restricted mode)
+
+`);
 	}
 
 	const args = ["--yolo"];
@@ -180,7 +190,9 @@ function executeHeadless(task) {
 	child.on("close", (code) => {
 		const endTimestamp = new Date().toISOString();
 		logStream.write(
-			`\n--- END TASK: ${task.name} (Exit Code: ${code}) at ${endTimestamp} ---\n`,
+			`
+--- END TASK: ${task.name} (Exit Code: ${code}) at ${endTimestamp} ---
+`,
 		);
 		logStream.end();
 
@@ -402,9 +414,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 			tasks.push(task);
 			saveTasks();
 			scheduleTask(task);
-			logToFile(
-				`SYSTEM: Task "${task.name}" scheduled for ${datetime} (Jules: ${task.useJules})`,
-			);
+			logToFile(`SYSTEM: Task "${task.name}" scheduled for ${datetime} (Jules: ${task.useJules})`);
 
 			if (monitor) {
 				const result = await waitForTaskCompletion(taskName, 600);
@@ -413,7 +423,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 						content: [
 							{
 								type: "text",
-								text: `Task "${taskName}" completed by ${task.useJules ? "Jules" : "Gemini"}.\n\nLogs:\n${result.logs}`,
+								text: `Task "${taskName}" completed by ${task.useJules ? "Jules" : "Gemini"}.
+
+Logs:
+${result.logs}`,
 							},
 						],
 					};
@@ -429,7 +442,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				content: [
 					{
 						type: "text",
-						text: `Task "${task.name}" scheduled. Executor: ${task.useJules ? "Jules" : "Gemini"}.`,
+						text: `Task "${taskName}" scheduled. Executor: ${task.useJules ? "Jules" : "Gemini"}.`,
 					},
 				],
 			};
@@ -472,7 +485,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 					content: [
 						{
 							type: "text",
-							text: `Logs for task "${taskName}":\n\n${content}`,
+							text: `Logs for task "${taskName}":
+
+${content}`,
 						},
 					],
 				};
