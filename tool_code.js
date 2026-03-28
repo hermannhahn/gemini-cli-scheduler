@@ -329,14 +329,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 				},
 			},
 			{
-				name: "check_task_results",
+				name: "view_task_log",
 				description: "Read results from a completed task.",
 				inputSchema: {
 					type: "object",
 					properties: {
 						taskName: {
 							type: "string",
-							description: "Name of the task to check.",
+							description: "Name of the task to view.",
 						},
 					},
 					required: ["taskName"],
@@ -362,24 +362,6 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 						},
 					},
 					required: ["idOrName"],
-				},
-			},
-			{
-				name: "monitor_task",
-				description: "Watch a task log in real-time until completion.",
-				inputSchema: {
-					type: "object",
-					properties: {
-						taskName: {
-							type: "string",
-							description: "Name of the task to watch.",
-						},
-						timeout: {
-							type: "number",
-							default: 300,
-						},
-					},
-					required: ["taskName"],
 				},
 			},
 		],
@@ -480,26 +462,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				};
 			}
 		}
-		case "monitor_task": {
-			const { taskName, timeout = 300 } = args;
-			const result = await waitForTaskCompletion(taskName, timeout);
-			if (result.success) {
-				return {
-					content: [
-						{
-							type: "text",
-							text: `SUCCESS: Task "${taskName}" completed.\n\nCaptured Logs:\n${result.logs}`,
-						},
-					],
-				};
-			} else {
-				return {
-					content: [{ type: "text", text: result.error }],
-					isError: true,
-				};
-			}
-		}
-		case "check_task_results": {
+		case "view_task_log": {
 			const { taskName } = args;
 			const taskLogPath = path.join(LOGS_DIR, `${taskName}.log`);
 
