@@ -108,26 +108,29 @@ function saveTasks() {
 function scheduleTask(task: Task) {
 	let executeAt = new Date(task.datetime);
 
-	if (isNaN(executeAt.getTime())) {
+	// If datetime is just HH:mm:ss, assume today at that time
+	if (task.datetime.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
 		const [hours, minutes, seconds] = task.datetime.split(":").map(Number);
 		executeAt = new Date();
 		executeAt.setHours(hours || 0, minutes || 0, seconds || 0, 0);
 	}
 
-	if (executeAt < new Date()) {
+	const now = new Date();
+	if (isNaN(executeAt.getTime()) || executeAt <= now) {
 		logToFile(
-			`SYSTEM: Skipping task "${task.name}" because it's in the past.`,
+			`SYSTEM: Skipping task "${task.name}" because it is invalid or in the past (Scheduled: ${task.datetime}, System Now: ${now.toISOString()}).`,
 		);
 		task.status = "missed";
 		saveTasks();
 		return;
 	}
 
+	logToFile(`SYSTEM: Scheduling task "${task.name}" for ${executeAt.toISOString()} (Local: ${executeAt.toLocaleString()})`);
+
 	const job = schedule.scheduleJob(executeAt, function () {
 		logToFile(`SYSTEM: Starting task "${task.name}"`);
 		executeHeadless(task);
 		activeJobs.delete(task.id);
-		if (job) job.cancel();
 	});
 
 	if (job) {
@@ -288,7 +291,7 @@ function cancelTask(idOrName: string) {
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.16",
+		version: "0.8.17",
 	},
 
 	{
