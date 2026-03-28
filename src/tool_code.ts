@@ -288,7 +288,7 @@ function cancelTask(idOrName: string) {
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.13",
+		version: "0.8.14",
 	},
 
 	{
