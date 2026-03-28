@@ -18,17 +18,19 @@
 	"license": "ISC",
 	"author": "Hermann Hahn",
 	"type": "commonjs",
-	"main": "gemini-extension.json",
+	"main": "tool_code.js",
 	"scripts": {
 		"lint": "eslint . --ext .js",
 		"version": "node scripts/update-version.js && git add .",
 		"postversion": "git push origin main --follow-tags && npm run push:release",
 		"cleanup-releases": "node scripts/cleanup-releases.js",
 		"push:release": "node -e \"const v = require('./package.json').version; require('child_process').execSync('gh release create v' + v + ' --generate-notes', {stdio: 'inherit'})\"",
-		"update": "gemini extension update gemini-cli-schedule",
+		"push:commit": "git add . && git commit -m \"v%s\" && git push",
+		"update": "gemini extension update gemini-cli-scheduler",
 		"deploy": "npm run lint && npm version patch -m \"v%s\" --force && npm run cleanup-releases && npm run update"
 	},
 	"gemini-dependencies": {
-		"gemini-cli-voice": "https://github.com/hermannhahn/gemini-cli-scheduler"
+		"gemini-cli-scheduler": "https://github.com/hermannhahn/gemini-cli-scheduler",
+		"gemini-cli-voice": "https://github.com/hermannhahn/gemini-cli-voice"
 	}
 }
