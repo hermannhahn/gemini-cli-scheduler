@@ -1,0 +1,34 @@
+{
+	"name": "gemini-cli-scheduler",
+	"version": "0.0.1",
+	"description": "Task scheduling extension for Gemini CLI",
+	"keywords": [
+		"Scheduler",
+		"Gemini",
+		"CLI"
+	],
+	"homepage": "https://github.com/hermannhahn/gemini-cli-scheduler#readme",
+	"bugs": {
+		"url": "https://github.com/hermannhahn/gemini-cli-scheduler/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/hermannhahn/gemini-cli-scheduler.git"
+	},
+	"license": "ISC",
+	"author": "Hermann Hahn",
+	"type": "commonjs",
+	"main": "gemini-extension.json",
+	"scripts": {
+		"lint": "eslint . --ext .js",
+		"version": "node scripts/update-version.js && git add .",
+		"postversion": "git push origin main --follow-tags && npm run push:release",
+		"cleanup-releases": "node scripts/cleanup-releases.js",
+		"push:release": "node -e \"const v = require('./package.json').version; require('child_process').execSync('gh release create v' + v + ' --generate-notes', {stdio: 'inherit'})\"",
+		"update": "gemini extension update gemini-cli-schedule",
+		"deploy": "npm run lint && npm version patch -m \"v%s\" --force && npm run cleanup-releases && npm run update"
+	},
+	"gemini-dependencies": {
+		"gemini-cli-voice": "https://github.com/hermannhahn/gemini-cli-scheduler"
+	}
+}

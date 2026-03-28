@@ -1,0 +1,7 @@
+GEMINI.md
+__pycache__/
+*.pyc
+.vscode/
+*.code-workspace
+node_modules/
+
