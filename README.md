@@ -10,7 +10,9 @@ Uma extensão MCP para o Gemini CLI que permite agendar lembretes e tarefas auto
 
 ## 🛠️ Instalação
 
-$ gemini extensions install <https://github.com/hermannhahn/gemini-cli-scheduler>
+[code]
+gemini extensions install https://github.com/hermannhahn/gemini-cli-scheduler
+[/code]
 
 ## 📖 Como Usar
 
