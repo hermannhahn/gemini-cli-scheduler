@@ -273,7 +273,7 @@ function cancelTask(idOrName: string) {
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.29",
+		version: "0.8.30",
 	},
 
 	{
@@ -498,7 +498,7 @@ ${logContent}` }],
 		}
 		case "list_tasks": {
 			const now = new Date();
-			const currentTime = now.toLocaleString("pt-BR", { hour12: false });
+			const currentTime = now.toLocaleString();
 			return {
 				content: [
 					{ 
@@ -513,7 +513,7 @@ ${logContent}` }],
 		}
 		case "get_system_time": {
 			const now = new Date();
-			const localTime = now.toLocaleString("pt-BR", { hour12: false });
+			const localTime = now.toLocaleString();
 			const utcTime = now.toISOString();
 			return {
 				content: [
