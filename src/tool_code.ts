@@ -31,7 +31,7 @@ interface Task {
 	status: "pending" | "completed" | "missed" | "cancelled";
 	logFile: string;
 	extensions: string[];
-	useJules: boolean;
+	executor: string;
 }
 
 interface Config {
@@ -79,20 +79,6 @@ function parseDateTime(datetime: string): Date {
 		date.setHours(hours || 0, minutes || 0, seconds || 0, 0);
 	}
 	return date;
-}
-
-function getDailyJulesUsage(executeAt: Date): number {
-	if (isNaN(executeAt.getTime())) return 0;
-	// Use local date string (YYYY-MM-DD) to avoid timezone issues with toISOString()
-	const dateString = executeAt.toLocaleDateString("en-CA"); // en-CA gives YYYY-MM-DD
-	return tasks.filter((t) => {
-		if (!t.useJules) return false;
-		// Check if the task is scheduled for the same day
-		const taskDateObj = parseDateTime(t.datetime);
-		if (isNaN(taskDateObj.getTime())) return false;
-		const taskDate = taskDateObj.toLocaleDateString("en-CA");
-		return taskDate === dateString && t.status !== "cancelled";
-	}).length;
 }
 
 function detectEnabledExtensions(): string[] {
@@ -191,46 +177,50 @@ function executeTask(task: Task): Promise<void> {
 
 		logStream.write(`--- START TASK: ${task.name} (${timestamp}) ---
 `);
+		logStream.write(`Executor: ${task.executor}
+`);
 
 		let finalPrompt = task.message;
 		const finalExtensions = task.extensions || [];
+		let command = "gemini";
+		const args = [];
 
-		if (task.useJules) {
-			logStream.write(`Executor: Jules (Sub-agent)
-`);
+		if (task.executor === "jules") {
 			finalPrompt = `Act as the Jules sub-agent and execute the following task: ${task.message}`;
 			if (!finalExtensions.includes("gemini-cli-jules")) {
 				finalExtensions.push("gemini-cli-jules");
 			}
+			args.push("--yolo");
+		} else if (task.executor.startsWith("ollama/")) {
+			command = "ollama";
+			const model = task.executor.split("/")[1];
+			args.push("run", model);
 		} else {
-			logStream.write(`Executor: Gemini (Standard)
-`);
+			// Default to gemini
+			args.push("--yolo");
+			if (task.executor !== "gemini") {
+				args.push("--model", task.executor);
+			}
 		}
 
 		logStream.write(`Prompt: ${finalPrompt}
 `);
 
-		if (finalExtensions.length > 0) {
+		if (command === "gemini" && finalExtensions.length > 0) {
 			logStream.write(
 				`Enabled Extensions: ${finalExtensions.join(", ")}\n\n`,
 			);
-		} else {
-			logStream.write(`Enabled Extensions: NONE (Restricted mode)\n\n`);
-		}
-
-		const args = ["--yolo"];
-
-		if (finalExtensions.length > 0) {
 			finalExtensions.forEach((ext) => {
 				args.push("-e", ext);
 			});
-		} else {
+		} else if (command === "gemini") {
+			logStream.write(`Enabled Extensions: NONE (Restricted mode)\n\n`);
 			args.push("-e", "none_active");
 		}
 
 		args.push("--prompt", finalPrompt);
 
-		const child = spawn("gemini", args, { stdio: ['ignore', 'pipe', 'pipe'] });
+		const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] });
 
 		child.stdout.on("data", (data) => {
 			logStream.write(data);
@@ -283,7 +273,7 @@ function cancelTask(idOrName: string) {
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.28",
+		version: "0.8.29",
 	},
 
 	{
@@ -332,11 +322,10 @@ Use the 'useJules' parameter to control which agent executes the task.
 								"If true, the model will wait (block) until the task is completed and return the resulting logs. Use this to see the outcome immediately or to use the scheduler as a 'sleep' (delay) before your next action.",
 							default: false,
 						},
-						useJules: {
-							type: "boolean",
+						executor: {
+							type: "string",
 							description:
-								"If true, the task will be executed by the Jules sub-agent.",
-							default: false,
+								"Optional: Specify the executor for the task. Examples: 'gemini-pro', 'jules', 'ollama/llama3'. Defaults to 'gemini' if not specified.",
 						},
 					},
 					required: ["datetime", "message", "name"],
@@ -410,7 +399,7 @@ interface ScheduleTaskArgs {
 	name: string;
 	extensions?: string[];
 	wait_for_completion?: boolean;
-	useJules?: boolean;
+	executor?: string;
 }
 
 interface SetJulesLimitArgs {
@@ -436,25 +425,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				name: taskName,
 				extensions,
 				wait_for_completion,
-				useJules,
+				executor,
 			} = args as unknown as ScheduleTaskArgs;
-
-			// Check daily limit if using Jules
-			if (useJules) {
-				const executeAt = parseDateTime(datetime);
-				const usage = getDailyJulesUsage(executeAt);
-				if (usage >= config.julesDailyLimit) {
-					return {
-						content: [
-							{
-								type: "text",
-								text: `Daily Jules limit reached (${config.julesDailyLimit}). You have already scheduled ${usage} Jules tasks for this day. Reduce the frequency or increase the limit using 'set_jules_limit'.`,
-							},
-						],
-						isError: true,
-					};
-				}
-			}
 
 			const id = Math.random().toString(36).substring(2, 9);
 
@@ -472,7 +444,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				status: "pending",
 				logFile: path.join(LOGS_DIR, `${taskName}.log`),
 				extensions: taskExtensions,
-				useJules: useJules || false,
+				executor: executor || "gemini",
 			};
 			tasks.push(task);
 			saveTasks();
@@ -500,12 +472,12 @@ ${logContent}` }],
 			} else {
 				// Schedule for later
 				scheduleTask(task);
-				logToFile(`SYSTEM: Task "${task.name}" scheduled for ${datetime} (Jules: ${task.useJules})`);
+				logToFile(`SYSTEM: Task "${task.name}" scheduled for ${datetime} with executor ${task.executor}`);
 				return {
 					content: [
 						{
 							type: "text",
-							text: `Task "${taskName}" scheduled for ${datetime}. Executor: ${task.useJules ? "Jules" : "Gemini"}.`,
+							text: `Task "${taskName}" scheduled for ${datetime}. Executor: ${task.executor}.`,
 						},
 					],
 				};
@@ -527,18 +499,12 @@ ${logContent}` }],
 		case "list_tasks": {
 			const now = new Date();
 			const currentTime = now.toLocaleString("pt-BR", { hour12: false });
-			const todayUsage = getDailyJulesUsage(now);
 			return {
 				content: [
 					{ 
 						type: "text", 
 						text: JSON.stringify({ 
 							systemTime: currentTime,
-							julesQuota: {
-								limit: config.julesDailyLimit,
-								todayUsage: todayUsage,
-								remaining: Math.max(0, config.julesDailyLimit - todayUsage)
-							},
 							tasks 
 						}, null, 2) 
 					},
