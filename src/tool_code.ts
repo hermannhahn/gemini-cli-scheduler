@@ -16,7 +16,7 @@ import { getDailyJulesUsage, scheduleTask, waitForTaskCompletion, cancelTask } f
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.37",
+		version: "0.8.38",
 	},
 
 	{
@@ -33,12 +33,14 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 				name: "schedule_task",
 				description: `Schedule a task to be executed at a specific date and time.
 
-Use the 'executor' parameter to control which agent or model executes the task.
+MANDATORY: Use this tool ONLY to DELEGATE work to a separate process or a different agent.
+- If YOU (the current agent) need to be the one to perform the action or follow up later, DO NOT use this; use 'schedule_reminder' instead.
+- If you do NOT set 'wait_for_completion' to true, you will NOT see the results of this task in this conversation.
 
-- **"jules"**: For complex, multi-step tasks. Runs as the Jules sub-agent.
-- **"gemini"**: For simple, atomic tasks using the default system model (standard gemini command).
-- **"gemini/<model>"**: Use a specific Gemini model (e.g., "gemini/gemini-1.5-pro" will run 'gemini --model gemini-1.5-pro').
-- **"ollama/<model>"**: Use an Ollama model (e.g., "ollama/llama3" will run 'gemini --model ollama/llama3').`,
+Use the 'executor' parameter to control which agent or model executes the task:
+- **"jules"**: ONLY for extremely complex, multi-step engineering tasks (e.g., refactoring). DO NOT use for simple monitoring or scripts. Wastes daily quota.
+- **"gemini"**: For simple, atomic tasks using the default system model.
+- **"shell"**: For direct OS commands that don't need AI analysis.`,
 				inputSchema: {
 					type: "object",
 					properties: {
@@ -64,13 +66,13 @@ Use the 'executor' parameter to control which agent or model executes the task.
 						wait_for_completion: {
 							type: "boolean",
 							description:
-								"If true, the current agent will wait for the task to finish and receive its output logs before continuing.",
+								"MANDATORY TRUE if you need the task result to decide your next step NOW. If false, the task runs in the background and you won't see its output.",
 							default: false,
 						},
 						executor: {
 							type: "string",
 							description:
-								"Execution engine. Use 'jules' for sub-agent, 'gemini' for default model, 'shell' for direct OS commands (no AI), or 'gemini/<model>', 'ollama/<model>' for specific versions.",
+								"Execution engine. 'jules' (complex/expensive), 'gemini' (simple/standard), 'shell' (direct command).",
 							default: "gemini",
 						},					},
 						required: ["datetime", "message", "name"],
@@ -79,7 +81,7 @@ Use the 'executor' parameter to control which agent or model executes the task.
 						{
 						name: "schedule_reminder",
 						description:
-						"Schedule a reminder. CRITICAL: This tool BLOCKS the current agent until the specified time. Use it when you need to 'wait' for something before resuming your work.",
+						"Schedule a reminder. CRITICAL: This tool BLOCKS (suspends) the current agent until the specified time. It acts as an \"alarm clock\" for YOU (the Main Agent). Use this when YOU need to 'wake up' later to perform an action while maintaining the current session context. MANDATORY for monitoring loops where the current agent is responsible for the follow-up.",
 						inputSchema: {
 						type: "object",
 						properties: {
@@ -90,7 +92,7 @@ Use the 'executor' parameter to control which agent or model executes the task.
 						},
 						message: {
 							type: "string",
-							description: "The message to receive when the reminder triggers.",
+							description: "The message you will receive when you 'wake up'.",
 						},
 						},
 						required: ["datetime", "message"],
