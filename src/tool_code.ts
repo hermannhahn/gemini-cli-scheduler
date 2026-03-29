@@ -155,16 +155,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				executor,
 			} = args as unknown as ScheduleTaskArgs;
 
-			// Handle potential legacy useJules from manual API calls
-			if (executor === undefined) {
-				const legacyArgs = args as Record<string, unknown>;
-				if (legacyArgs.useJules !== undefined) {
-					executor = legacyArgs.useJules ? "jules" : "gemini";
-				} else {
-					executor = "gemini";
-				}
-			}
-
 			// Check daily limit if using Jules
 			if (executor === "jules") {
 				const executeAt = parseDateTime(datetime);
@@ -197,7 +187,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				status: "pending",
 				logFile: path.join(LOGS_DIR, `${taskName}.log`),
 				extensions: taskExtensions,
-				executor: executor,
+				executor: executor || "gemini",
 			};
 
 			tasks.push(task);

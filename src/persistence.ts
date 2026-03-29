@@ -34,11 +34,7 @@ export function loadTasks() {
 
 			tasks.length = 0;
 			loadedTasks.forEach((task: unknown) => {
-				const t = task as unknown as Task & { useJules?: boolean };
-				if (t.executor === undefined) {
-					t.executor = t.useJules ? "jules" : "gemini";
-					delete t.useJules;
-				}
+				const t = task as Task;
 				tasks.push(t);
 
 				if (t.status === "pending") {
