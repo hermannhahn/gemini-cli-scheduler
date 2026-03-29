@@ -12,8 +12,15 @@ import { spawn, execSync } from "child_process";
 
 // Persistent directory for all users/environments
 const HOME_DIR = os.homedir();
-const PERSISTENT_GEMINI_DIR = path.join(HOME_DIR, ".gemini", "extensions", "gemini-cli-scheduler");
-const PERSISTENCE_PATH = process.env.SCHEDULER_PATH || path.join(PERSISTENT_GEMINI_DIR, "tasks.json");
+const PERSISTENT_GEMINI_DIR = path.join(
+	HOME_DIR,
+	".gemini",
+	"extensions",
+	"gemini-cli-scheduler",
+);
+const PERSISTENCE_PATH =
+	process.env.SCHEDULER_PATH ||
+	path.join(PERSISTENT_GEMINI_DIR, "tasks.json");
 const LOGS_DIR = path.join(PERSISTENT_GEMINI_DIR, "logs");
 const SYSTEM_LOG_PATH = path.join(PERSISTENT_GEMINI_DIR, "scheduler.log");
 const CONFIG_PATH = path.join(PERSISTENT_GEMINI_DIR, "config.json");
@@ -170,7 +177,9 @@ function scheduleTask(task: Task) {
 		return;
 	}
 
-	logToFile(`SYSTEM: Scheduling task "${task.name}" for ${executeAt.toISOString()} (Local: ${executeAt.toLocaleString()})`);
+	logToFile(
+		`SYSTEM: Scheduling task "${task.name}" for ${executeAt.toISOString()} (Local: ${executeAt.toLocaleString()})`,
+	);
 
 	const job = schedule.scheduleJob(executeAt, function () {
 		logToFile(`SYSTEM: Starting task "${task.name}"`);
@@ -255,7 +264,10 @@ function executeHeadless(task: Task) {
 	});
 }
 
-async function waitForTaskCompletion(taskName: string, timeout: number): Promise<{ success: boolean; logs?: string; error?: string }> {
+async function waitForTaskCompletion(
+	taskName: string,
+	timeout: number,
+): Promise<{ success: boolean; logs?: string; error?: string }> {
 	const taskLogPath = path.join(LOGS_DIR, `${taskName}.log`);
 	const endMarker = `--- END TASK: ${taskName}`;
 
@@ -351,8 +363,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 		tools: [
 			{
 				name: "schedule_task",
-				description:
-					`Schedule a task to be executed at a specific date and time.
+				description: `Schedule a task to be executed at a specific date and time.
 
 Use the 'useJules' parameter to control which agent executes the task.
 
@@ -379,7 +390,7 @@ Use the 'useJules' parameter to control which agent executes the task.
 							description:
 								"Optional: List of extensions to include.",
 						},
-						monitor: {
+						wait_for_completion: {
 							type: "boolean",
 							description:
 								"If true, wait for task completion and return logs.",
@@ -411,7 +422,8 @@ Use the 'useJules' parameter to control which agent executes the task.
 			},
 			{
 				name: "list_tasks",
-				description: "List all tasks with status and log info. Also returns current system time.",
+				description:
+					"List all tasks with status and log info. Also returns current system time.",
 				inputSchema: {
 					type: "object",
 					properties: {},
@@ -419,7 +431,8 @@ Use the 'useJules' parameter to control which agent executes the task.
 			},
 			{
 				name: "get_system_time",
-				description: "Returns the current system time in YYYY-MM-DD HH:MM:SS format.",
+				description:
+					"Returns the current system time in YYYY-MM-DD HH:MM:SS format.",
 				inputSchema: {
 					type: "object",
 					properties: {},
@@ -441,7 +454,8 @@ Use the 'useJules' parameter to control which agent executes the task.
 			},
 			{
 				name: "set_jules_limit",
-				description: "Set the daily limit for Jules sub-agent usage. Useful for managing plan quotas.",
+				description:
+					"Set the daily limit for Jules sub-agent usage. Useful for managing plan quotas.",
 				inputSchema: {
 					type: "object",
 					properties: {
@@ -462,7 +476,7 @@ interface ScheduleTaskArgs {
 	message: string;
 	name: string;
 	extensions?: string[];
-	monitor?: boolean;
+	wait_for_completion?: boolean;
 	useJules?: boolean;
 }
 
@@ -488,7 +502,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				message,
 				name: taskName,
 				extensions,
-				monitor,
+				wait_for_completion,
 				useJules,
 			} = args as unknown as ScheduleTaskArgs;
 
@@ -530,9 +544,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 			tasks.push(task);
 			saveTasks();
 			scheduleTask(task);
-			logToFile(`SYSTEM: Task "${task.name}" scheduled for ${datetime} (Jules: ${task.useJules})`);
+			logToFile(
+				`SYSTEM: Task "${task.name}" scheduled for ${datetime} (Jules: ${task.useJules})`,
+			);
 
-			if (monitor) {
+			if (wait_for_completion) {
 				const result = await waitForTaskCompletion(taskName, 600);
 				if (result.success) {
 					return {
@@ -548,7 +564,12 @@ ${result.logs}`,
 					};
 				} else {
 					return {
-						content: [{ type: "text", text: result.error || "Unknown error" }],
+						content: [
+							{
+								type: "text",
+								text: result.error || "Unknown error",
+							},
+						],
 						isError: true,
 					};
 				}
@@ -582,17 +603,24 @@ ${result.logs}`,
 			const todayUsage = getDailyJulesUsage(now);
 			return {
 				content: [
-					{ 
-						type: "text", 
-						text: JSON.stringify({ 
-							systemTime: currentTime,
-							julesQuota: {
-								limit: config.julesDailyLimit,
-								todayUsage: todayUsage,
-								remaining: Math.max(0, config.julesDailyLimit - todayUsage)
+					{
+						type: "text",
+						text: JSON.stringify(
+							{
+								systemTime: currentTime,
+								julesQuota: {
+									limit: config.julesDailyLimit,
+									todayUsage: todayUsage,
+									remaining: Math.max(
+										0,
+										config.julesDailyLimit - todayUsage,
+									),
+								},
+								tasks,
 							},
-							tasks 
-						}, null, 2) 
+							null,
+							2,
+						),
 					},
 				],
 			};
@@ -603,7 +631,10 @@ ${result.logs}`,
 			const utcTime = now.toISOString();
 			return {
 				content: [
-					{ type: "text", text: `Local system time: ${localTime}\nUTC time: ${utcTime}` },
+					{
+						type: "text",
+						text: `Local system time: ${localTime}\nUTC time: ${utcTime}`,
+					},
 				],
 			};
 		}
