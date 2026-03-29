@@ -16,7 +16,7 @@ import { getDailyJulesUsage, scheduleTask, waitForTaskCompletion, cancelTask } f
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.34",
+		version: "0.8.35",
 	},
 
 	{
@@ -121,8 +121,7 @@ Use the 'executor' parameter to control which agent or model executes the task.
 			},
 			{
 				name: "get_system_time",
-				description:
-					"Returns the current system time in YYYY-MM-DD HH:MM:SS format.",
+				description: "Returns the current system time.",
 				inputSchema: {
 					type: "object",
 					properties: {},
@@ -292,14 +291,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 			};
 		}
 		case "get_system_time": {
-			const now = new Date();
-			const localTime = now.toLocaleString("pt-BR", { hour12: false });
-			const utcTime = now.toISOString();
 			return {
 				content: [
 					{
 						type: "text",
-						text: `Local system time: ${localTime}\nUTC time: ${utcTime}`,
+						text: new Date().toLocaleString("pt-BR", { hour12: false }),
 					},
 				],
 			};
