@@ -105,7 +105,7 @@ export function executeHeadless(task: Task) {
 
 	args.push("--prompt", finalPrompt);
 
-	const child = spawn("gemini", args);
+	const child = spawn("gemini", args, { env: process.env });
 
 	child.stdout.on("data", (data) => {
 		logStream.write(data);
@@ -136,55 +136,34 @@ export async function waitForTaskCompletion(
 	const endMarker = `--- END TASK: ${taskName}`;
 
 	return new Promise((resolve) => {
+		const startTime = Date.now();
+
 		const checkInterval = setInterval(() => {
 			if (fs.existsSync(taskLogPath)) {
-				clearInterval(checkInterval);
-				startWatching();
-			}
-		}, 500);
+				const stats = fs.statSync(taskLogPath);
+				const fd = fs.openSync(taskLogPath, "r");
+				const buffer = Buffer.alloc(stats.size);
+				fs.readSync(fd, buffer, 0, stats.size, 0);
+				fs.closeSync(fd);
 
-		function startWatching() {
-			let lastSize = 0;
-			let accumulatedLogs = "";
-			let timeoutId: NodeJS.Timeout;
-
-			const watcher = fs.watch(taskLogPath, (eventType) => {
-				if (eventType === "change") {
-					const stats = fs.statSync(taskLogPath);
-					const fd = fs.openSync(taskLogPath, "r");
-					const bufferSize = stats.size - lastSize;
-					if (bufferSize <= 0) {
-						fs.closeSync(fd);
-						return;
-					}
-
-					const buffer = Buffer.alloc(bufferSize);
-					fs.readSync(fd, buffer, 0, bufferSize, lastSize);
-					fs.closeSync(fd);
-
-					const newContent = buffer.toString();
-					accumulatedLogs += newContent;
-					lastSize = stats.size;
-
-					if (newContent.includes(endMarker)) {
-						clearTimeout(timeoutId);
-						watcher.close();
-						resolve({
-							success: true,
-							logs: accumulatedLogs,
-						});
-					}
+				const content = buffer.toString();
+				if (content.includes(endMarker)) {
+					clearInterval(checkInterval);
+					resolve({
+						success: true,
+						logs: content,
+					});
 				}
-			});
+			}
 
-			timeoutId = setTimeout(() => {
-				watcher.close();
+			if (Date.now() - startTime > timeout * 1000) {
+				clearInterval(checkInterval);
 				resolve({
 					success: false,
 					error: `TIMEOUT: Task "${taskName}" did not complete within ${timeout} seconds.`,
 				});
-			}, timeout * 1000);
-		}
+			}
+		}, 1000); // Poll every second
 	});
 }
 
