@@ -225,7 +225,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				content: [
 					{
 						type: "text",
-						text: `Task "${taskName}" scheduled. Executor: ${task.executor}.`,
+						text: `📅 Task "${taskName}" scheduled. Executor: ${task.executor}.`,
 					},
 				],
 			};
