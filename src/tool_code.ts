@@ -336,7 +336,7 @@ function cancelTask(idOrName: string) {
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.25",
+		version: "0.8.26",
 	},
 
 	{
@@ -379,10 +379,10 @@ Use the 'useJules' parameter to control which agent executes the task.
 							description:
 								"Optional: List of extensions to include.",
 						},
-						monitor: {
+						wait_for_completion: {
 							type: "boolean",
 							description:
-								"If true, wait for task completion and return logs.",
+								"If true, the model will wait (block) until the task is completed and return the resulting logs. Use this to see the outcome immediately or to use the scheduler as a 'sleep' (delay) before your next action.",
 							default: false,
 						},
 						useJules: {
@@ -462,7 +462,7 @@ interface ScheduleTaskArgs {
 	message: string;
 	name: string;
 	extensions?: string[];
-	monitor?: boolean;
+	wait_for_completion?: boolean;
 	useJules?: boolean;
 }
 
@@ -488,7 +488,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				message,
 				name: taskName,
 				extensions,
-				monitor,
+				wait_for_completion,
 				useJules,
 			} = args as unknown as ScheduleTaskArgs;
 
@@ -532,7 +532,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 			scheduleTask(task);
 			logToFile(`SYSTEM: Task "${task.name}" scheduled for ${datetime} (Jules: ${task.useJules})`);
 
-			if (monitor) {
+			if (wait_for_completion) {
 				const result = await waitForTaskCompletion(taskName, 600);
 				if (result.success) {
 					return {

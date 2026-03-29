@@ -18,7 +18,7 @@ Professional MCP extension for autonomous task scheduling in Gemini CLI, with in
 - [x] Data isolation: all files remain within the extension's folder.
 
 ### Phase 2: MCP Tools (v0.8.0)
-- [x] **schedule_task**: Support for `monitor` (integrated wait) and `useJules` (sub-agent).
+- [x] **schedule_task**: Support for `wait_for_completion` (integrated wait) and `useJules` (sub-agent).
 - [x] **list_tasks**: Displays complete history with status and log paths.
 - [x] **cancel_task**: Support for cancelling pending tasks.
 - [x] **monitor_task**: Intelligent real-time monitoring (waits for completion).
