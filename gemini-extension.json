@@ -1,6 +1,6 @@
 {
 	"name": "gemini-cli-scheduler",
-	"version": "0.8.26",
+	"version": "0.8.27",
 	"description": "A powerful, persistent task scheduler for Gemini CLI. Schedule shell commands to run at specific times, manage recurring tasks, and control sub-agent (Jules) daily usage quotas.",
 	"mcpServers": {
 		"scheduler": {

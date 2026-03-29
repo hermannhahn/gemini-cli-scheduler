@@ -172,145 +172,92 @@ function scheduleTask(task: Task) {
 
 	logToFile(`SYSTEM: Scheduling task "${task.name}" for ${executeAt.toISOString()} (Local: ${executeAt.toLocaleString()})`);
 
-	const job = schedule.scheduleJob(executeAt, function () {
+	const job = schedule.scheduleJob(executeAt, async function () {
 		logToFile(`SYSTEM: Starting task "${task.name}"`);
-		executeHeadless(task);
+		await executeTask(task);
 		activeJobs.delete(task.id);
 	});
-
 	if (job) {
 		activeJobs.set(task.id, job);
 	}
 }
 
-function executeHeadless(task: Task) {
-	const taskLogPath = path.join(LOGS_DIR, `${task.name}.log`);
-	task.logFile = taskLogPath;
-	const logStream = fs.createWriteStream(taskLogPath, { flags: "w" });
-	const timestamp = new Date().toISOString();
+function executeTask(task: Task): Promise<void> {
+	return new Promise((resolve) => {
+		const taskLogPath = path.join(LOGS_DIR, `${task.name}.log`);
+		task.logFile = taskLogPath;
+		const logStream = fs.createWriteStream(taskLogPath, { flags: "w" });
+		const timestamp = new Date().toISOString();
 
-	logStream.write(`--- START TASK: ${task.name} (${timestamp}) ---
+		logStream.write(`--- START TASK: ${task.name} (${timestamp}) ---
 `);
 
-	let finalPrompt = task.message;
-	const finalExtensions = task.extensions || [];
+		let finalPrompt = task.message;
+		const finalExtensions = task.extensions || [];
 
-	if (task.useJules) {
-		logStream.write(`Executor: Jules (Sub-agent)
+		if (task.useJules) {
+			logStream.write(`Executor: Jules (Sub-agent)
 `);
-		finalPrompt = `Act as the Jules sub-agent and execute the following task: ${task.message}`;
-		if (!finalExtensions.includes("gemini-cli-jules")) {
-			finalExtensions.push("gemini-cli-jules");
+			finalPrompt = `Act as the Jules sub-agent and execute the following task: ${task.message}`;
+			if (!finalExtensions.includes("gemini-cli-jules")) {
+				finalExtensions.push("gemini-cli-jules");
+			}
+		} else {
+			logStream.write(`Executor: Gemini (Standard)
+`);
 		}
-	} else {
-		logStream.write(`Executor: Gemini (Standard)
-`);
-	}
 
-	logStream.write(`Prompt: ${finalPrompt}
+		logStream.write(`Prompt: ${finalPrompt}
 `);
 
-	if (finalExtensions.length > 0) {
-		logStream.write(
-			`Enabled Extensions: ${finalExtensions.join(", ")}\n\n`,
-		);
-	} else {
-		logStream.write(`Enabled Extensions: NONE (Restricted mode)\n\n`);
-	}
+		if (finalExtensions.length > 0) {
+			logStream.write(
+				`Enabled Extensions: ${finalExtensions.join(", ")}\n\n`,
+			);
+		} else {
+			logStream.write(`Enabled Extensions: NONE (Restricted mode)\n\n`);
+		}
 
-	const args = ["--yolo"];
+		const args = ["--yolo"];
 
-	if (finalExtensions.length > 0) {
-		finalExtensions.forEach((ext) => {
-			args.push("-e", ext);
+		if (finalExtensions.length > 0) {
+			finalExtensions.forEach((ext) => {
+				args.push("-e", ext);
+			});
+		} else {
+			args.push("-e", "none_active");
+		}
+
+		args.push("--prompt", finalPrompt);
+
+		const child = spawn("gemini", args);
+
+		child.stdout.on("data", (data) => {
+			logStream.write(data);
 		});
-	} else {
-		args.push("-e", "none_active");
-	}
 
-	args.push("--prompt", finalPrompt);
+		child.stderr.on("data", (data) => {
+			logStream.write(`[STDERR] ${data}`);
+		});
 
-	const child = spawn("gemini", args);
-
-	child.stdout.on("data", (data) => {
-		logStream.write(data);
-	});
-
-	child.stderr.on("data", (data) => {
-		logStream.write(`[STDERR] ${data}`);
-	});
-
-	child.on("close", (code) => {
-		const endTimestamp = new Date().toISOString();
-		logStream.write(
-			`
+		child.on("close", (code) => {
+			const endTimestamp = new Date().toISOString();
+			logStream.write(
+				`
 --- END TASK: ${task.name} (Exit Code: ${code}) at ${endTimestamp} ---
 `,
-		);
-		logStream.end();
+			);
+			logStream.end();
 
-		task.status = "completed";
-		saveTasks();
-		logToFile(`SYSTEM: Task "${task.name}" completed with code ${code}.`);
+			task.status = "completed";
+			saveTasks();
+			logToFile(`SYSTEM: Task "${task.name}" completed with code ${code}.`);
+			resolve();
+		});
 	});
 }
 
-async function waitForTaskCompletion(taskName: string, timeout: number): Promise<{ success: boolean; logs?: string; error?: string }> {
-	const taskLogPath = path.join(LOGS_DIR, `${taskName}.log`);
-	const endMarker = `--- END TASK: ${taskName}`;
 
-	return new Promise((resolve) => {
-		const checkInterval = setInterval(() => {
-			if (fs.existsSync(taskLogPath)) {
-				clearInterval(checkInterval);
-				startWatching();
-			}
-		}, 500);
-
-		function startWatching() {
-			let lastSize = 0;
-			let accumulatedLogs = "";
-			let timeoutId: NodeJS.Timeout;
-
-			const watcher = fs.watch(taskLogPath, (eventType) => {
-				if (eventType === "change") {
-					const stats = fs.statSync(taskLogPath);
-					const fd = fs.openSync(taskLogPath, "r");
-					const bufferSize = stats.size - lastSize;
-					if (bufferSize <= 0) {
-						fs.closeSync(fd);
-						return;
-					}
-
-					const buffer = Buffer.alloc(bufferSize);
-					fs.readSync(fd, buffer, 0, bufferSize, lastSize);
-					fs.closeSync(fd);
-
-					const newContent = buffer.toString();
-					accumulatedLogs += newContent;
-					lastSize = stats.size;
-
-					if (newContent.includes(endMarker)) {
-						clearTimeout(timeoutId);
-						watcher.close();
-						resolve({
-							success: true,
-							logs: accumulatedLogs,
-						});
-					}
-				}
-			});
-
-			timeoutId = setTimeout(() => {
-				watcher.close();
-				resolve({
-					success: false,
-					error: `TIMEOUT: Task "${taskName}" did not complete within ${timeout} seconds.`,
-				});
-			}, timeout * 1000);
-		}
-	});
-}
 
 function cancelTask(idOrName: string) {
 	const taskIndex = tasks.findIndex(
@@ -336,7 +283,7 @@ function cancelTask(idOrName: string) {
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.26",
+		version: "0.8.27",
 	},
 
 	{
@@ -516,6 +463,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				taskExtensions = detectEnabledExtensions();
 			}
 
+			// Create the task object first
 			const task: Task = {
 				id,
 				datetime,
@@ -526,42 +474,42 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				extensions: taskExtensions,
 				useJules: useJules || false,
 			};
-
 			tasks.push(task);
 			saveTasks();
-			scheduleTask(task);
-			logToFile(`SYSTEM: Task "${task.name}" scheduled for ${datetime} (Jules: ${task.useJules})`);
 
 			if (wait_for_completion) {
-				const result = await waitForTaskCompletion(taskName, 600);
-				if (result.success) {
+				// Execute immediately and wait
+				logToFile(`SYSTEM: Task "${task.name}" starting immediate execution for wait_for_completion.`);
+				await executeTask(task);
+
+				// Now read the log file and return its content
+				if (fs.existsSync(task.logFile)) {
+					const logContent = fs.readFileSync(task.logFile, "utf8");
 					return {
-						content: [
-							{
-								type: "text",
-								text: `Task "${taskName}" completed by ${task.useJules ? "Jules" : "Gemini"}.
+						content: [{ type: "text", text: `Task "${taskName}" completed.
 
 Logs:
-${result.logs}`,
-							},
-						],
+${logContent}` }],
 					};
 				} else {
 					return {
-						content: [{ type: "text", text: result.error || "Unknown error" }],
+						content: [{ type: "text", text: `Task "${taskName}" executed, but log file was not found.` }],
 						isError: true,
 					};
 				}
+			} else {
+				// Schedule for later
+				scheduleTask(task);
+				logToFile(`SYSTEM: Task "${task.name}" scheduled for ${datetime} (Jules: ${task.useJules})`);
+				return {
+					content: [
+						{
+							type: "text",
+							text: `Task "${taskName}" scheduled for ${datetime}. Executor: ${task.useJules ? "Jules" : "Gemini"}.`,
+						},
+					],
+				};
 			}
-
-			return {
-				content: [
-					{
-						type: "text",
-						text: `Task "${taskName}" scheduled. Executor: ${task.useJules ? "Jules" : "Gemini"}.`,
-					},
-				],
-			};
 		}
 		case "set_jules_limit": {
 			const { limit } = args as unknown as SetJulesLimitArgs;
