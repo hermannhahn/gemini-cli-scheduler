@@ -16,7 +16,7 @@ import { getDailyJulesUsage, scheduleTask, waitForTaskCompletion, cancelTask } f
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.33",
+		version: "0.8.34",
 	},
 
 	{
@@ -44,38 +44,58 @@ Use the 'executor' parameter to control which agent or model executes the task.
 					properties: {
 						datetime: {
 							type: "string",
-							description: "Date/time for execution.",
+							description:
+								"Execution date/time. Supports: 'YYYY-MM-DD HH:mm:ss', 'HH:mm:ss' (for today), and relative intervals like 'in 5 minutes', 'in 1 hour', 'in 30 seconds'.",
 						},
 						message: {
 							type: "string",
-							description: "Prompt to execute.",
+							description: "The prompt or command to execute.",
 						},
 						name: {
 							type: "string",
-							description: "Unique name for the task.",
+							description: "Unique identifier for the task.",
 						},
 						extensions: {
 							type: "array",
 							items: { type: "string" },
 							description:
-								"Optional: List of extensions to include.",
+								"Optional: Extensions to enable for this specific task execution.",
 						},
 						wait_for_completion: {
 							type: "boolean",
 							description:
-								"If true, wait for task completion and return logs.",
+								"If true, the current agent will wait for the task to finish and receive its output logs before continuing.",
 							default: false,
 						},
 						executor: {
 							type: "string",
 							description:
-								"The agent or model to use (jules, gemini, gemini/*, ollama/*).",
+								"Execution engine. Use 'jules' for sub-agent, 'gemini' for default model, 'shell' for direct OS commands (no AI), or 'gemini/<model>', 'ollama/<model>' for specific versions.",
 							default: "gemini",
+						},					},
+						required: ["datetime", "message", "name"],
 						},
-					},
-					required: ["datetime", "message", "name"],
-				},
-			},
+						},
+						{
+						name: "schedule_reminder",
+						description:
+						"Schedule a reminder. CRITICAL: This tool BLOCKS the current agent until the specified time. Use it when you need to 'wait' for something before resuming your work.",
+						inputSchema: {
+						type: "object",
+						properties: {
+						datetime: {
+							type: "string",
+							description:
+								"When to remind. Supports: 'HH:mm:ss' or relative intervals like 'in 10 minutes'.",
+						},
+						message: {
+							type: "string",
+							description: "The message to receive when the reminder triggers.",
+						},
+						},
+						required: ["datetime", "message"],
+						},
+						},
 			{
 				name: "view_task_log",
 				description: "Read results from a completed task.",
@@ -305,6 +325,59 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				};
 			}
 		}
+		case "schedule_reminder": {
+			const { datetime, message } = args as {
+				datetime: string;
+				message: string;
+			};
+
+			const timestampStr = new Date().getTime().toString(36);
+			const taskName = `reminder-${timestampStr}`;
+
+			// Create a task object with shell executor and wait_for_completion=true
+			const id = Math.random().toString(36).substring(2, 9);
+			const task: Task = {
+				id,
+				datetime,
+				message: `echo "REMINDER: ${message.replace(/"/g, '\\"')}"`,
+				name: taskName,
+				status: "pending",
+				logFile: path.join(LOGS_DIR, `${taskName}.log`),
+				extensions: [],
+				executor: "shell",
+			};
+
+			tasks.push(task);
+			saveTasks();
+			scheduleTask(task);
+			logToFile(
+				`SYSTEM: Reminder "${task.name}" scheduled for ${datetime}`,
+			);
+
+			// Always wait for reminders to give them the "sleep-wake" feeling for models
+			const result = await waitForTaskCompletion(taskName, 86400); // 24h timeout for reminders
+			if (result.success) {
+				return {
+					content: [
+						{
+							type: "text",
+							text: `REMINDER: ${message}`,
+						},
+					],
+				};
+			} else {
+				return {
+					content: [
+						{
+							type: "text",
+							text: result.error || "Reminder failed.",
+						},
+					],
+					isError: true,
+				};
+			}
+		}
+
 		case "view_task_log": {
 			const { taskName } = args as unknown as ViewTaskLogArgs;
 			const taskLogPath = path.join(LOGS_DIR, `${taskName}.log`);

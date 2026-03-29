@@ -56,6 +56,40 @@ export function executeHeadless(task: Task) {
 	logStream.write(`--- START TASK: ${task.name} (${timestamp}) ---
 `);
 
+	if (task.executor === "shell") {
+		logStream.write(`Executor: Shell (Direct Command)\n`);
+		logStream.write(`Command: ${task.message}\n\n`);
+
+		const child = spawn(task.message, [], {
+			shell: true,
+			env: process.env,
+		});
+
+		child.stdout.on("data", (data) => {
+			logStream.write(data);
+		});
+
+		child.stderr.on("data", (data) => {
+			logStream.write(`[STDERR] ${data}`);
+		});
+
+		child.on("close", (code) => {
+			const endTimestamp = new Date().toISOString();
+			logStream.write(
+				`\n--- END TASK: ${task.name} (Exit Code: ${code}) at ${endTimestamp} ---\n`,
+			);
+			logStream.end();
+
+			task.status = "completed";
+			saveTasks();
+			logToFile(
+				`SYSTEM: Shell task "${task.name}" completed with code ${code}.`,
+			);
+		});
+
+		return; // Exit early as we don't need the gemini CLI logic below
+	}
+
 	let finalPrompt = task.message;
 	const finalExtensions = task.extensions || [];
 	let modelName: string | null = null;
