@@ -295,7 +295,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				content: [
 					{
 						type: "text",
-						text: new Date().toLocaleString("pt-BR", { hour12: false }),
+						text: `🕒 ${new Date().toLocaleString()}`,
 					},
 				],
 			};

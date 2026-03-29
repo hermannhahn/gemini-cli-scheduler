@@ -21,6 +21,8 @@
 	"main": "tool_code.js",
 	"scripts": {
 		"lint": "eslint 'src/**/*.ts' --fix",
+		"test": "echo \"No tests specified\" && exit 0",
+		"webpack": "npx webpack",
 		"update:version": "npm run lint && npm version patch --no-git-tag-version && node scripts/update-version.js && npm run push:version",
 		"cleanup-releases": "node scripts/cleanup-releases.js",
 		"push:version": "git add . && node -e \"const v = require('./package.json').version; require('child_process').execSync('git commit -m \\\"chore: bump version to ' + v + '\\\" && git tag -f v' + v + ' && git push origin -f v' + v, {stdio: 'inherit'})\" && git push origin development",
