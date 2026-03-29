@@ -69,12 +69,28 @@ function saveConfig() {
 	}
 }
 
+function parseDateTime(datetime: string): Date {
+	let date = new Date(datetime);
+
+	// If datetime is just HH:mm:ss, assume today at that time
+	if (datetime.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
+		const [hours, minutes, seconds] = datetime.split(":").map(Number);
+		date = new Date();
+		date.setHours(hours || 0, minutes || 0, seconds || 0, 0);
+	}
+	return date;
+}
+
 function getDailyJulesUsage(executeAt: Date): number {
-	const dateString = executeAt.toISOString().split("T")[0];
+	if (isNaN(executeAt.getTime())) return 0;
+	// Use local date string (YYYY-MM-DD) to avoid timezone issues with toISOString()
+	const dateString = executeAt.toLocaleDateString("en-CA"); // en-CA gives YYYY-MM-DD
 	return tasks.filter((t) => {
 		if (!t.useJules) return false;
 		// Check if the task is scheduled for the same day
-		const taskDate = new Date(t.datetime).toISOString().split("T")[0];
+		const taskDateObj = parseDateTime(t.datetime);
+		if (isNaN(taskDateObj.getTime())) return false;
+		const taskDate = taskDateObj.toLocaleDateString("en-CA");
 		return taskDate === dateString && t.status !== "cancelled";
 	}).length;
 }
@@ -143,15 +159,7 @@ function saveTasks() {
 }
 
 function scheduleTask(task: Task) {
-	let executeAt = new Date(task.datetime);
-
-	// If datetime is just HH:mm:ss, assume today at that time
-	if (task.datetime.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
-		const [hours, minutes, seconds] = task.datetime.split(":").map(Number);
-		executeAt = new Date();
-		executeAt.setHours(hours || 0, minutes || 0, seconds || 0, 0);
-	}
-
+	const executeAt = parseDateTime(task.datetime);
 	const now = new Date();
 	if (isNaN(executeAt.getTime()) || executeAt <= now) {
 		logToFile(
@@ -328,7 +336,7 @@ function cancelTask(idOrName: string) {
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.19",
+		version: "0.8.22",
 	},
 
 	{
@@ -486,10 +494,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 			// Check daily limit if using Jules
 			if (useJules) {
-				let executeAt = new Date(datetime);
-				if (datetime.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
-					executeAt = new Date();
-				}
+				const executeAt = parseDateTime(datetime);
 				const usage = getDailyJulesUsage(executeAt);
 				if (usage >= config.julesDailyLimit) {
 					return {
