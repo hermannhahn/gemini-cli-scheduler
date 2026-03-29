@@ -291,7 +291,7 @@ function cancelTask(idOrName: string) {
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.17",
+		version: "0.8.18",
 	},
 
 	{
@@ -307,7 +307,12 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 			{
 				name: "schedule_task",
 				description:
-					"Schedule a task. If 'monitor' is true, wait and return logs. If 'useJules' is true, the task will be executed by the Jules sub-agent.",
+					`Schedule a task to be executed at a specific date and time.
+
+Use the 'useJules' parameter to control which agent executes the task.
+
+- **Gemini (useJules: false, default):** For simple, atomic tasks. Examples: running a single command ('git pull'), reading/writing a file, or tasks with low-volume output.
+- **Jules (useJules: true):** For complex, multi-step tasks. Examples: code refactoring, bug investigation, running builds, tests, or linters that produce high-volume output.`,
 				inputSchema: {
 					type: "object",
 					properties: {
