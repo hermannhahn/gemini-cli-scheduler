@@ -21,10 +21,10 @@
 	"main": "tool_code.js",
 	"scripts": {
 		"lint": "eslint 'src/**/*.ts' --fix",
-		"update:version": "npm run lint && npm version patch --no-git-tag-version",
-		"version": "node scripts/update-version.js && git add .",
-		"publish:release": "git push origin main --follow-tags && npm run push:release",
+		"update:version": "npm run lint && npm version patch --no-git-tag-version && node scripts/update-version.js && npm run push:version",
 		"cleanup-releases": "node scripts/cleanup-releases.js",
+		"push:version": "git add . && node -e \"const v = require('./package.json').version; require('child_process').execSync('git tag v' + v + ' && git push origin v' + v, {stdio: 'inherit'})\"",
+		"publish:release": "git push origin main --follow-tags && npm run push:release",
 		"push:release": "node -e \"const v = require('./package.json').version; require('child_process').execSync('gh release create v' + v + ' --generate-notes', {stdio: 'inherit'})\"",
 		"update": "echo 'Y' | gemini extension update gemini-cli-scheduler",
 		"deploy": "git checkout main && git pull origin main && npm run lint && npx webpack && node -e \"const v = require('./package.json').version; require('child_process').execSync('git tag v' + v + ' && git push origin v' + v, {stdio: 'inherit'})\" && npm run push:release && npm run cleanup-releases && npm run update && git checkout development"
