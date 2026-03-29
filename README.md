@@ -31,8 +31,7 @@ An MCP extension for Gemini CLI that allows scheduling reminders and automated t
 
 To use this extension efficiently and save resources, follow these guidelines:
 
-### 1. Reminders vs. Tasks
-- **`schedule_reminder`**: Think of this as an **alarm clock for YOU** (the current agent). It blocks your execution until the time is reached. Use it for monitoring loops or when you must maintain the exact context of the current conversation to proceed.
+### 1. Tasks
 - **`schedule_task`**: Use this to **DELEGATE** work to someone else. It runs independently. Use it for long-running tasks, background jobs, or when you don't need to stay "awake" waiting for the result.
 
 ### 2. Choosing the Right Executor

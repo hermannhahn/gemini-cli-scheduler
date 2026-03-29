@@ -16,7 +16,7 @@ import { getDailyJulesUsage, scheduleTask, waitForTaskCompletion, cancelTask } f
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.39",
+		version: "0.8.40",
 	},
 
 	{
@@ -34,7 +34,6 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 				description: `Schedule a task to be executed at a specific date and time.
 
 MANDATORY: Use this tool ONLY to DELEGATE work to a separate process or a different agent.
-- If YOU (the current agent) need to be the one to perform the action or follow up later, DO NOT use this; use 'schedule_reminder' instead.
 - If you do NOT set 'wait_for_completion' to true, you will NOT see the results of this task in this conversation.
 
 Use the 'executor' parameter to control which agent or model executes the task:
@@ -76,26 +75,6 @@ Use the 'executor' parameter to control which agent or model executes the task:
 							default: "gemini",
 						},					},
 						required: ["datetime", "message", "name"],
-						},
-						},
-						{
-						name: "schedule_reminder",
-						description:
-						"Schedule a reminder. CRITICAL: This tool BLOCKS (suspends) the current agent until the specified time. It acts as an \"alarm clock\" for YOU (the Main Agent). Use this when YOU need to 'wake up' later to perform an action while maintaining the current session context. MANDATORY for monitoring loops where the current agent is responsible for the follow-up.",
-						inputSchema: {
-						type: "object",
-						properties: {
-						datetime: {
-							type: "string",
-							description:
-								"When to remind. Supports: 'HH:mm:ss' or relative intervals like 'in 10 minutes'.",
-						},
-						message: {
-							type: "string",
-							description: "The message you will receive when you 'wake up'.",
-						},
-						},
-						required: ["datetime", "message"],
 						},
 						},
 			{
@@ -317,58 +296,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 						{
 							type: "text",
 							text: `Task ${idOrName} not found or already processed.`,
-						},
-					],
-					isError: true,
-				};
-			}
-		}
-		case "schedule_reminder": {
-			const { datetime, message } = args as {
-				datetime: string;
-				message: string;
-			};
-
-			const timestampStr = new Date().getTime().toString(36);
-			const taskName = `reminder-${timestampStr}`;
-
-			// Create a task object with shell executor and wait_for_completion=true
-			const id = Math.random().toString(36).substring(2, 9);
-			const task: Task = {
-				id,
-				datetime,
-				message: `echo "REMINDER: ${message.replace(/"/g, '\\"')}"`,
-				name: taskName,
-				status: "pending",
-				logFile: path.join(LOGS_DIR, `${taskName}.log`),
-				extensions: [],
-				executor: "shell",
-			};
-
-			tasks.push(task);
-			saveTasks();
-			scheduleTask(task);
-			logToFile(
-				`SYSTEM: Reminder "${task.name}" scheduled for ${datetime}`,
-			);
-
-			// Always wait for reminders to give them the "sleep-wake" feeling for models
-			const result = await waitForTaskCompletion(taskName, 86400); // 24h timeout for reminders
-			if (result.success) {
-				return {
-					content: [
-						{
-							type: "text",
-							text: `REMINDER: ${message}`,
-						},
-					],
-				};
-			} else {
-				return {
-					content: [
-						{
-							type: "text",
-							text: result.error || "Reminder failed.",
 						},
 					],
 					isError: true,
