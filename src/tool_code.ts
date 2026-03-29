@@ -6,337 +6,17 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import fs from "fs";
 import path from "path";
-import os from "os";
-import schedule from "node-schedule";
-import { spawn, execSync } from "child_process";
-
-// Persistent directory for all users/environments
-const HOME_DIR = os.homedir();
-const PERSISTENT_GEMINI_DIR = path.join(HOME_DIR, ".gemini", "extensions", "gemini-cli-scheduler");
-const PERSISTENCE_PATH = process.env.SCHEDULER_PATH || path.join(PERSISTENT_GEMINI_DIR, "tasks.json");
-const LOGS_DIR = path.join(PERSISTENT_GEMINI_DIR, "logs");
-const SYSTEM_LOG_PATH = path.join(PERSISTENT_GEMINI_DIR, "scheduler.log");
-const CONFIG_PATH = path.join(PERSISTENT_GEMINI_DIR, "config.json");
-
-// Ensure the persistent directory and logs directory exist
-if (!fs.existsSync(LOGS_DIR)) {
-	fs.mkdirSync(LOGS_DIR, { recursive: true });
-}
-
-interface Task {
-	id: string;
-	datetime: string;
-	message: string;
-	name: string;
-	status: "pending" | "completed" | "missed" | "cancelled";
-	logFile: string;
-	extensions: string[];
-	useJules: boolean;
-}
-
-interface Config {
-	julesDailyLimit: number;
-}
-
-let tasks: Task[] = [];
-let config: Config = { julesDailyLimit: 50 };
-const activeJobs = new Map<string, schedule.Job>();
-
-function logToFile(message: string, specificLogPath = SYSTEM_LOG_PATH) {
-	const timestamp = new Date().toISOString();
-	const logMessage = `[${timestamp}] ${message}\n`;
-	fs.appendFileSync(specificLogPath, logMessage);
-}
-
-function loadConfig() {
-	if (fs.existsSync(CONFIG_PATH)) {
-		try {
-			const data = fs.readFileSync(CONFIG_PATH, "utf8");
-			config = JSON.parse(data);
-		} catch (e) {
-			console.error("Error loading config:", e);
-		}
-	} else {
-		saveConfig();
-	}
-}
-
-function saveConfig() {
-	try {
-		fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
-	} catch (e) {
-		console.error("Error saving config:", e);
-	}
-}
-
-function parseDateTime(datetime: string): Date {
-	let date = new Date(datetime);
-
-	// If datetime is just HH:mm:ss, assume today at that time
-	if (datetime.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
-		const [hours, minutes, seconds] = datetime.split(":").map(Number);
-		date = new Date();
-		date.setHours(hours || 0, minutes || 0, seconds || 0, 0);
-	}
-	return date;
-}
-
-function getDailyJulesUsage(executeAt: Date): number {
-	if (isNaN(executeAt.getTime())) return 0;
-	// Use local date string (YYYY-MM-DD) to avoid timezone issues with toISOString()
-	const dateString = executeAt.toLocaleDateString("en-CA"); // en-CA gives YYYY-MM-DD
-	return tasks.filter((t) => {
-		if (!t.useJules) return false;
-		// Check if the task is scheduled for the same day
-		const taskDateObj = parseDateTime(t.datetime);
-		if (isNaN(taskDateObj.getTime())) return false;
-		const taskDate = taskDateObj.toLocaleDateString("en-CA");
-		return taskDate === dateString && t.status !== "cancelled";
-	}).length;
-}
-
-function detectEnabledExtensions(): string[] {
-	try {
-		const output = execSync("gemini extensions list", { encoding: "utf8" });
-		const sections = output.split("✓ ");
-		const enabledExtensions: string[] = [];
-
-		for (const section of sections) {
-			if (!section.trim()) continue;
-
-			const lines = section.split("\n");
-			const firstLine = lines[0].trim();
-			const nameMatch = firstLine.match(/^([^\s(]+)/);
-			if (!nameMatch) continue;
-
-			const extName = nameMatch[1];
-
-			const isEnabled =
-				section.includes("Enabled (User): true") ||
-				section.includes("Enabled (Workspace): true");
-
-			if (isEnabled && extName !== "gemini-cli-scheduler") {
-				enabledExtensions.push(extName);
-			}
-		}
-		return enabledExtensions;
-	} catch (e) {
-		console.error("Error detecting extensions:", e);
-		return [];
-	}
-}
-
-function loadTasks() {
-	if (fs.existsSync(PERSISTENCE_PATH)) {
-		try {
-			const data = fs.readFileSync(PERSISTENCE_PATH, "utf8");
-			tasks = JSON.parse(data);
-			const now = new Date();
-
-			tasks.forEach((task) => {
-				if (task.status === "pending") {
-					const executeAt = new Date(task.datetime);
-					if (executeAt > now) {
-						scheduleTask(task);
-					} else {
-						task.status = "missed";
-					}
-				}
-			});
-			saveTasks();
-		} catch (e) {
-			console.error("Error loading tasks:", e);
-		}
-	}
-}
-
-function saveTasks() {
-	try {
-		fs.writeFileSync(PERSISTENCE_PATH, JSON.stringify(tasks, null, 2));
-	} catch (e) {
-		console.error("Error saving tasks:", e);
-	}
-}
-
-function scheduleTask(task: Task) {
-	const executeAt = parseDateTime(task.datetime);
-	const now = new Date();
-	if (isNaN(executeAt.getTime()) || executeAt <= now) {
-		logToFile(
-			`SYSTEM: Skipping task "${task.name}" because it is invalid or in the past (Scheduled: ${task.datetime}, System Now: ${now.toISOString()}).`,
-		);
-		task.status = "missed";
-		saveTasks();
-		return;
-	}
-
-	logToFile(`SYSTEM: Scheduling task "${task.name}" for ${executeAt.toISOString()} (Local: ${executeAt.toLocaleString()})`);
-
-	const job = schedule.scheduleJob(executeAt, function () {
-		logToFile(`SYSTEM: Starting task "${task.name}"`);
-		executeHeadless(task);
-		activeJobs.delete(task.id);
-	});
-
-	if (job) {
-		activeJobs.set(task.id, job);
-	}
-}
-
-function executeHeadless(task: Task) {
-	const taskLogPath = path.join(LOGS_DIR, `${task.name}.log`);
-	task.logFile = taskLogPath;
-	const logStream = fs.createWriteStream(taskLogPath, { flags: "w" });
-	const timestamp = new Date().toISOString();
-
-	logStream.write(`--- START TASK: ${task.name} (${timestamp}) ---
-`);
-
-	let finalPrompt = task.message;
-	const finalExtensions = task.extensions || [];
-
-	if (task.useJules) {
-		logStream.write(`Executor: Jules (Sub-agent)
-`);
-		finalPrompt = `Act as the Jules sub-agent and execute the following task: ${task.message}`;
-		if (!finalExtensions.includes("gemini-cli-jules")) {
-			finalExtensions.push("gemini-cli-jules");
-		}
-	} else {
-		logStream.write(`Executor: Gemini (Standard)
-`);
-	}
-
-	logStream.write(`Prompt: ${finalPrompt}
-`);
-
-	if (finalExtensions.length > 0) {
-		logStream.write(
-			`Enabled Extensions: ${finalExtensions.join(", ")}\n\n`,
-		);
-	} else {
-		logStream.write(`Enabled Extensions: NONE (Restricted mode)\n\n`);
-	}
-
-	const args = ["--yolo"];
-
-	if (finalExtensions.length > 0) {
-		finalExtensions.forEach((ext) => {
-			args.push("-e", ext);
-		});
-	} else {
-		args.push("-e", "none_active");
-	}
-
-	args.push("--prompt", finalPrompt);
-
-	const child = spawn("gemini", args);
-
-	child.stdout.on("data", (data) => {
-		logStream.write(data);
-	});
-
-	child.stderr.on("data", (data) => {
-		logStream.write(`[STDERR] ${data}`);
-	});
-
-	child.on("close", (code) => {
-		const endTimestamp = new Date().toISOString();
-		logStream.write(
-			`
---- END TASK: ${task.name} (Exit Code: ${code}) at ${endTimestamp} ---
-`,
-		);
-		logStream.end();
-
-		task.status = "completed";
-		saveTasks();
-		logToFile(`SYSTEM: Task "${task.name}" completed with code ${code}.`);
-	});
-}
-
-async function waitForTaskCompletion(taskName: string, timeout: number): Promise<{ success: boolean; logs?: string; error?: string }> {
-	const taskLogPath = path.join(LOGS_DIR, `${taskName}.log`);
-	const endMarker = `--- END TASK: ${taskName}`;
-
-	return new Promise((resolve) => {
-		const checkInterval = setInterval(() => {
-			if (fs.existsSync(taskLogPath)) {
-				clearInterval(checkInterval);
-				startWatching();
-			}
-		}, 500);
-
-		function startWatching() {
-			let lastSize = 0;
-			let accumulatedLogs = "";
-			let timeoutId: NodeJS.Timeout;
-
-			const watcher = fs.watch(taskLogPath, (eventType) => {
-				if (eventType === "change") {
-					const stats = fs.statSync(taskLogPath);
-					const fd = fs.openSync(taskLogPath, "r");
-					const bufferSize = stats.size - lastSize;
-					if (bufferSize <= 0) {
-						fs.closeSync(fd);
-						return;
-					}
-
-					const buffer = Buffer.alloc(bufferSize);
-					fs.readSync(fd, buffer, 0, bufferSize, lastSize);
-					fs.closeSync(fd);
-
-					const newContent = buffer.toString();
-					accumulatedLogs += newContent;
-					lastSize = stats.size;
-
-					if (newContent.includes(endMarker)) {
-						clearTimeout(timeoutId);
-						watcher.close();
-						resolve({
-							success: true,
-							logs: accumulatedLogs,
-						});
-					}
-				}
-			});
-
-			timeoutId = setTimeout(() => {
-				watcher.close();
-				resolve({
-					success: false,
-					error: `TIMEOUT: Task "${taskName}" did not complete within ${timeout} seconds.`,
-				});
-			}, timeout * 1000);
-		}
-	});
-}
-
-function cancelTask(idOrName: string) {
-	const taskIndex = tasks.findIndex(
-		(t) => t.id === idOrName || t.name === idOrName,
-	);
-	if (taskIndex !== -1) {
-		const task = tasks[taskIndex];
-		if (task.status === "pending") {
-			const job = activeJobs.get(task.id);
-			if (job) {
-				job.cancel();
-				activeJobs.delete(task.id);
-			}
-			task.status = "cancelled";
-			saveTasks();
-			logToFile(`SYSTEM: Task "${task.name}" cancelled.`);
-			return true;
-		}
-	}
-	return false;
-}
+import { Task, ScheduleTaskArgs, SetJulesLimitArgs, CancelTaskArgs, ViewTaskLogArgs } from "./types";
+import { LOGS_DIR } from "./constants";
+import { tasks, config } from "./state";
+import { logToFile, parseDateTime, detectEnabledExtensions } from "./utils";
+import { loadTasks, loadConfig, saveTasks, saveConfig } from "./persistence";
+import { getDailyJulesUsage, scheduleTask, waitForTaskCompletion, cancelTask } from "./scheduler";
 
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.32",
+		version: "0.8.34",
 	},
 
 	{
@@ -351,50 +31,71 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 		tools: [
 			{
 				name: "schedule_task",
-				description:
-					`Schedule a task to be executed at a specific date and time.
+				description: `Schedule a task to be executed at a specific date and time.
 
-Use the 'useJules' parameter to control which agent executes the task.
+Use the 'executor' parameter to control which agent or model executes the task.
 
-- **Gemini (useJules: false, default):** For simple, atomic tasks. Examples: running a single command ('git pull'), reading/writing a file, or tasks with low-volume output.
-- **Jules (useJules: true):** For complex, multi-step tasks. Examples: code refactoring, bug investigation, running builds, tests, or linters that produce high-volume output.`,
+- **"jules"**: For complex, multi-step tasks. Runs as the Jules sub-agent.
+- **"gemini"**: For simple, atomic tasks using the default system model (standard gemini command).
+- **"gemini/<model>"**: Use a specific Gemini model (e.g., "gemini/gemini-1.5-pro" will run 'gemini --model gemini-1.5-pro').
+- **"ollama/<model>"**: Use an Ollama model (e.g., "ollama/llama3" will run 'gemini --model ollama/llama3').`,
 				inputSchema: {
 					type: "object",
 					properties: {
 						datetime: {
 							type: "string",
-							description: "Date/time for execution.",
+							description:
+								"Execution date/time. Supports: 'YYYY-MM-DD HH:mm:ss', 'HH:mm:ss' (for today), and relative intervals like 'in 5 minutes', 'in 1 hour', 'in 30 seconds'.",
 						},
 						message: {
 							type: "string",
-							description: "Prompt to execute.",
+							description: "The prompt or command to execute.",
 						},
 						name: {
 							type: "string",
-							description: "Unique name for the task.",
+							description: "Unique identifier for the task.",
 						},
 						extensions: {
 							type: "array",
 							items: { type: "string" },
 							description:
-								"Optional: List of extensions to include.",
+								"Optional: Extensions to enable for this specific task execution.",
 						},
-						monitor: {
+						wait_for_completion: {
 							type: "boolean",
 							description:
-								"If true, wait for task completion and return logs.",
+								"If true, the current agent will wait for the task to finish and receive its output logs before continuing.",
 							default: false,
 						},
-						useJules: {
-							type: "boolean",
+						executor: {
+							type: "string",
 							description:
-								"If true, the task will be executed by the Jules sub-agent.",
-							default: false,
+								"Execution engine. Use 'jules' for sub-agent, 'gemini' for default model, 'shell' for direct OS commands (no AI), or 'gemini/<model>', 'ollama/<model>' for specific versions.",
+							default: "gemini",
+						},					},
+						required: ["datetime", "message", "name"],
 						},
-					},
-					required: ["datetime", "message", "name"],
-				},
-			},
+						},
+						{
+						name: "schedule_reminder",
+						description:
+						"Schedule a reminder. CRITICAL: This tool BLOCKS the current agent until the specified time. Use it when you need to 'wait' for something before resuming your work.",
+						inputSchema: {
+						type: "object",
+						properties: {
+						datetime: {
+							type: "string",
+							description:
+								"When to remind. Supports: 'HH:mm:ss' or relative intervals like 'in 10 minutes'.",
+						},
+						message: {
+							type: "string",
+							description: "The message to receive when the reminder triggers.",
+						},
+						},
+						required: ["datetime", "message"],
+						},
+						},
 			{
 				name: "view_task_log",
 				description: "Read results from a completed task.",
@@ -411,7 +112,8 @@ Use the 'useJules' parameter to control which agent executes the task.
 			},
 			{
 				name: "list_tasks",
-				description: "List all tasks with status and log info. Also returns current system time.",
+				description:
+					"List all tasks with status and log info. Also returns current system time.",
 				inputSchema: {
 					type: "object",
 					properties: {},
@@ -419,7 +121,8 @@ Use the 'useJules' parameter to control which agent executes the task.
 			},
 			{
 				name: "get_system_time",
-				description: "Returns the current system time in YYYY-MM-DD HH:MM:SS format.",
+				description:
+					"Returns the current system time in YYYY-MM-DD HH:MM:SS format.",
 				inputSchema: {
 					type: "object",
 					properties: {},
@@ -441,7 +144,8 @@ Use the 'useJules' parameter to control which agent executes the task.
 			},
 			{
 				name: "set_jules_limit",
-				description: "Set the daily limit for Jules sub-agent usage. Useful for managing plan quotas.",
+				description:
+					"Set the daily limit for Jules sub-agent usage. Useful for managing plan quotas.",
 				inputSchema: {
 					type: "object",
 					properties: {
@@ -457,43 +161,22 @@ Use the 'useJules' parameter to control which agent executes the task.
 	};
 });
 
-interface ScheduleTaskArgs {
-	datetime: string;
-	message: string;
-	name: string;
-	extensions?: string[];
-	monitor?: boolean;
-	useJules?: boolean;
-}
-
-interface SetJulesLimitArgs {
-	limit: number;
-}
-
-interface CancelTaskArgs {
-	idOrName: string;
-}
-
-interface ViewTaskLogArgs {
-	taskName: string;
-}
-
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
 	const { name, arguments: args } = request.params;
 
 	switch (name) {
 		case "schedule_task": {
-			const {
+			let {
 				datetime,
 				message,
 				name: taskName,
 				extensions,
-				monitor,
-				useJules,
+				wait_for_completion,
+				executor,
 			} = args as unknown as ScheduleTaskArgs;
 
 			// Check daily limit if using Jules
-			if (useJules) {
+			if (executor === "jules") {
 				const executeAt = parseDateTime(datetime);
 				const usage = getDailyJulesUsage(executeAt);
 				if (usage >= config.julesDailyLimit) {
@@ -524,31 +207,35 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				status: "pending",
 				logFile: path.join(LOGS_DIR, `${taskName}.log`),
 				extensions: taskExtensions,
-				useJules: useJules || false,
+				executor: executor || "gemini",
 			};
 
 			tasks.push(task);
 			saveTasks();
 			scheduleTask(task);
-			logToFile(`SYSTEM: Task "${task.name}" scheduled for ${datetime} (Jules: ${task.useJules})`);
+			logToFile(
+				`SYSTEM: Task "${task.name}" scheduled for ${datetime} (Executor: ${task.executor})`,
+			);
 
-			if (monitor) {
+			if (wait_for_completion) {
 				const result = await waitForTaskCompletion(taskName, 600);
 				if (result.success) {
 					return {
 						content: [
 							{
 								type: "text",
-								text: `Task "${taskName}" completed by ${task.useJules ? "Jules" : "Gemini"}.
-
-Logs:
-${result.logs}`,
+								text: `Task "${taskName}" completed by ${task.executor}.\n\nLogs:\n${result.logs}`,
 							},
 						],
 					};
 				} else {
 					return {
-						content: [{ type: "text", text: result.error || "Unknown error" }],
+						content: [
+							{
+								type: "text",
+								text: result.error || "Unknown error",
+							},
+						],
 						isError: true,
 					};
 				}
@@ -558,7 +245,7 @@ ${result.logs}`,
 				content: [
 					{
 						type: "text",
-						text: `Task "${taskName}" scheduled. Executor: ${task.useJules ? "Jules" : "Gemini"}.`,
+						text: `Task "${taskName}" scheduled. Executor: ${task.executor}.`,
 					},
 				],
 			};
@@ -582,17 +269,24 @@ ${result.logs}`,
 			const todayUsage = getDailyJulesUsage(now);
 			return {
 				content: [
-					{ 
-						type: "text", 
-						text: JSON.stringify({ 
-							systemTime: currentTime,
-							julesQuota: {
-								limit: config.julesDailyLimit,
-								todayUsage: todayUsage,
-								remaining: Math.max(0, config.julesDailyLimit - todayUsage)
+					{
+						type: "text",
+						text: JSON.stringify(
+							{
+								systemTime: currentTime,
+								julesQuota: {
+									limit: config.julesDailyLimit,
+									todayUsage: todayUsage,
+									remaining: Math.max(
+										0,
+										config.julesDailyLimit - todayUsage,
+									),
+								},
+								tasks,
 							},
-							tasks 
-						}, null, 2) 
+							null,
+							2,
+						),
 					},
 				],
 			};
@@ -603,7 +297,10 @@ ${result.logs}`,
 			const utcTime = now.toISOString();
 			return {
 				content: [
-					{ type: "text", text: `Local system time: ${localTime}\nUTC time: ${utcTime}` },
+					{
+						type: "text",
+						text: `Local system time: ${localTime}\nUTC time: ${utcTime}`,
+					},
 				],
 			};
 		}
@@ -628,6 +325,59 @@ ${result.logs}`,
 				};
 			}
 		}
+		case "schedule_reminder": {
+			const { datetime, message } = args as {
+				datetime: string;
+				message: string;
+			};
+
+			const timestampStr = new Date().getTime().toString(36);
+			const taskName = `reminder-${timestampStr}`;
+
+			// Create a task object with shell executor and wait_for_completion=true
+			const id = Math.random().toString(36).substring(2, 9);
+			const task: Task = {
+				id,
+				datetime,
+				message: `echo "REMINDER: ${message.replace(/"/g, '\\"')}"`,
+				name: taskName,
+				status: "pending",
+				logFile: path.join(LOGS_DIR, `${taskName}.log`),
+				extensions: [],
+				executor: "shell",
+			};
+
+			tasks.push(task);
+			saveTasks();
+			scheduleTask(task);
+			logToFile(
+				`SYSTEM: Reminder "${task.name}" scheduled for ${datetime}`,
+			);
+
+			// Always wait for reminders to give them the "sleep-wake" feeling for models
+			const result = await waitForTaskCompletion(taskName, 86400); // 24h timeout for reminders
+			if (result.success) {
+				return {
+					content: [
+						{
+							type: "text",
+							text: `REMINDER: ${message}`,
+						},
+					],
+				};
+			} else {
+				return {
+					content: [
+						{
+							type: "text",
+							text: result.error || "Reminder failed.",
+						},
+					],
+					isError: true,
+				};
+			}
+		}
+
 		case "view_task_log": {
 			const { taskName } = args as unknown as ViewTaskLogArgs;
 			const taskLogPath = path.join(LOGS_DIR, `${taskName}.log`);
@@ -638,9 +388,7 @@ ${result.logs}`,
 					content: [
 						{
 							type: "text",
-							text: `Logs for task "${taskName}":
-
-${content}`,
+							text: `Logs for task "${taskName}":\n\n${content}`,
 						},
 					],
 				};

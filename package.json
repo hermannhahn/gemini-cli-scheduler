@@ -1,7 +1,7 @@
 {
 	"name": "gemini-cli-scheduler",
-	"version": "0.8.32",
-	"description": "Task scheduling extension for Gemini CLI",
+	"version": "0.8.34",
+	"description": "Powerful extension for scheduling tasks, shell commands, and reminders. Supports Jules, Gemini, and Ollama executors with relative time support.",
 	"keywords": [
 		"Scheduler",
 		"Gemini",
@@ -21,10 +21,10 @@
 	"main": "tool_code.js",
 	"scripts": {
 		"lint": "eslint 'src/**/*.ts' --fix",
-		"update:version": "npm run lint && npm version patch --no-git-tag-version",
-		"version": "node scripts/update-version.js && git add .",
-		"publish:release": "git push origin main --follow-tags && npm run push:release",
+		"update:version": "npm run lint && npm version patch --no-git-tag-version && node scripts/update-version.js && npm run push:version",
 		"cleanup-releases": "node scripts/cleanup-releases.js",
+		"push:version": "git add . && git commit -m \"chore: bump version to $(node -e \\\"console.log(require('./package.json').version)\\\")\" && node -e \"const v = require('./package.json').version; require('child_process').execSync('git tag -f v' + v + ' && git push origin -f v' + v, {stdio: 'inherit'})\" && git push origin development",
+		"publish:release": "git push origin main --follow-tags && npm run push:release",
 		"push:release": "node -e \"const v = require('./package.json').version; require('child_process').execSync('gh release create v' + v + ' --generate-notes', {stdio: 'inherit'})\"",
 		"update": "echo 'Y' | gemini extension update gemini-cli-scheduler",
 		"deploy": "git checkout main && git pull origin main && npm run lint && npx webpack && node -e \"const v = require('./package.json').version; require('child_process').execSync('git tag v' + v + ' && git push origin v' + v, {stdio: 'inherit'})\" && npm run push:release && npm run cleanup-releases && npm run update && git checkout development"
