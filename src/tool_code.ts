@@ -230,7 +230,7 @@ function executeTask(task: Task): Promise<void> {
 
 		args.push("--prompt", finalPrompt);
 
-		const child = spawn("gemini", args);
+		const child = spawn("gemini", args, { stdio: ['ignore', 'pipe', 'pipe'] });
 
 		child.stdout.on("data", (data) => {
 			logStream.write(data);
@@ -283,7 +283,7 @@ function cancelTask(idOrName: string) {
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.27",
+		version: "0.8.28",
 	},
 
 	{
