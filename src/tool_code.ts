@@ -16,6 +16,7 @@ const PERSISTENT_GEMINI_DIR = path.join(HOME_DIR, ".gemini", "extensions", "gemi
 const PERSISTENCE_PATH = process.env.SCHEDULER_PATH || path.join(PERSISTENT_GEMINI_DIR, "tasks.json");
 const LOGS_DIR = path.join(PERSISTENT_GEMINI_DIR, "logs");
 const SYSTEM_LOG_PATH = path.join(PERSISTENT_GEMINI_DIR, "scheduler.log");
+const CONFIG_PATH = path.join(PERSISTENT_GEMINI_DIR, "config.json");
 
 // Ensure the persistent directory and logs directory exist
 if (!fs.existsSync(LOGS_DIR)) {
@@ -33,13 +34,49 @@ interface Task {
 	useJules: boolean;
 }
 
+interface Config {
+	julesDailyLimit: number;
+}
+
 let tasks: Task[] = [];
+let config: Config = { julesDailyLimit: 50 };
 const activeJobs = new Map<string, schedule.Job>();
 
 function logToFile(message: string, specificLogPath = SYSTEM_LOG_PATH) {
 	const timestamp = new Date().toISOString();
 	const logMessage = `[${timestamp}] ${message}\n`;
 	fs.appendFileSync(specificLogPath, logMessage);
+}
+
+function loadConfig() {
+	if (fs.existsSync(CONFIG_PATH)) {
+		try {
+			const data = fs.readFileSync(CONFIG_PATH, "utf8");
+			config = JSON.parse(data);
+		} catch (e) {
+			console.error("Error loading config:", e);
+		}
+	} else {
+		saveConfig();
+	}
+}
+
+function saveConfig() {
+	try {
+		fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+	} catch (e) {
+		console.error("Error saving config:", e);
+	}
+}
+
+function getDailyJulesUsage(executeAt: Date): number {
+	const dateString = executeAt.toISOString().split("T")[0];
+	return tasks.filter((t) => {
+		if (!t.useJules) return false;
+		// Check if the task is scheduled for the same day
+		const taskDate = new Date(t.datetime).toISOString().split("T")[0];
+		return taskDate === dateString && t.status !== "cancelled";
+	}).length;
 }
 
 function detectEnabledExtensions(): string[] {
@@ -291,7 +328,7 @@ function cancelTask(idOrName: string) {
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.18",
+		version: "0.8.19",
 	},
 
 	{
@@ -394,6 +431,20 @@ Use the 'useJules' parameter to control which agent executes the task.
 					required: ["idOrName"],
 				},
 			},
+			{
+				name: "set_jules_limit",
+				description: "Set the daily limit for Jules sub-agent usage. Useful for managing plan quotas.",
+				inputSchema: {
+					type: "object",
+					properties: {
+						limit: {
+							type: "number",
+							description: "New daily limit for Jules tasks.",
+						},
+					},
+					required: ["limit"],
+				},
+			},
 		],
 	};
 });
@@ -405,6 +456,10 @@ interface ScheduleTaskArgs {
 	extensions?: string[];
 	monitor?: boolean;
 	useJules?: boolean;
+}
+
+interface SetJulesLimitArgs {
+	limit: number;
 }
 
 interface CancelTaskArgs {
@@ -428,6 +483,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				monitor,
 				useJules,
 			} = args as unknown as ScheduleTaskArgs;
+
+			// Check daily limit if using Jules
+			if (useJules) {
+				let executeAt = new Date(datetime);
+				if (datetime.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
+					executeAt = new Date();
+				}
+				const usage = getDailyJulesUsage(executeAt);
+				if (usage >= config.julesDailyLimit) {
+					return {
+						content: [
+							{
+								type: "text",
+								text: `Daily Jules limit reached (${config.julesDailyLimit}). You have already scheduled ${usage} Jules tasks for this day. Reduce the frequency or increase the limit using 'set_jules_limit'.`,
+							},
+						],
+						isError: true,
+					};
+				}
+			}
+
 			const id = Math.random().toString(36).substring(2, 9);
 
 			let taskExtensions = extensions;
@@ -482,15 +558,34 @@ ${result.logs}`,
 				],
 			};
 		}
+		case "set_jules_limit": {
+			const { limit } = args as unknown as SetJulesLimitArgs;
+			config.julesDailyLimit = limit;
+			saveConfig();
+			return {
+				content: [
+					{
+						type: "text",
+						text: `Daily Jules limit updated to ${limit}.`,
+					},
+				],
+			};
+		}
 		case "list_tasks": {
 			const now = new Date();
 			const currentTime = now.toLocaleString("pt-BR", { hour12: false });
+			const todayUsage = getDailyJulesUsage(now);
 			return {
 				content: [
 					{ 
 						type: "text", 
 						text: JSON.stringify({ 
 							systemTime: currentTime,
+							julesQuota: {
+								limit: config.julesDailyLimit,
+								todayUsage: todayUsage,
+								remaining: Math.max(0, config.julesDailyLimit - todayUsage)
+							},
 							tasks 
 						}, null, 2) 
 					},
@@ -565,6 +660,7 @@ async function main() {
 	const transport = new StdioServerTransport();
 	await server.connect(transport);
 	loadTasks();
+	loadConfig();
 	logToFile("SYSTEM: Gemini CLI Scheduler MCP server started.");
 }
 
