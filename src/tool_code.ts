@@ -16,7 +16,7 @@ import { getDailyJulesUsage, scheduleTask, waitForTaskCompletion, cancelTask } f
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "0.8.35",
+		version: "0.8.36",
 	},
 
 	{
@@ -295,7 +295,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				content: [
 					{
 						type: "text",
-						text: new Date().toLocaleString("pt-BR", { hour12: false }),
+						text: `🕒 ${new Date().toLocaleString()}`,
 					},
 				],
 			};
