@@ -1,6 +1,6 @@
 {
 	"name": "gemini-cli-scheduler",
-	"version": "0.8.38",
+	"version": "0.8.39",
 	"description": "Powerful task scheduler and reminder system for Gemini CLI. Supports scheduling shell commands, sub-agent (Jules) tasks, and specific models with relative time support ('in 5 minutes').",
 	"mcpServers": {
 		"scheduler": {
