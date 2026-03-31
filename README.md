@@ -6,7 +6,7 @@
 
 An MCP extension for Gemini CLI that provides a powerful task scheduler system.
 
-## 🛠️ Professional Architecture
+## 🛠️ Architecture
 
 - **Modular TypeScript**: Built with strong typing for maximum reliability and ease of maintenance.
 - **Optimized Bundling**: Uses `webpack` to generate a high-performance, self-contained `tool_code.js`.
