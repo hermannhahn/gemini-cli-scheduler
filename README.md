@@ -1,53 +1,67 @@
 # Gemini CLI Scheduler Extension
 
-An MCP extension for Gemini CLI that allows scheduling reminders and automated tasks.
+[![Version](https://img.shields.io/github/v/release/hermannhahn/gemini-cli-scheduler)](https://github.com/hermannhahn/gemini-cli-scheduler/releases)
+[![License](https://img.shields.io/github/license/hermannhahn/gemini-cli-scheduler)](https://github.com/hermannhahn/gemini-cli-scheduler/blob/main/LICENSE)
+[![GitHub Topics](https://img.shields.io/github/topics/hermannhahn/gemini-cli-scheduler)](https://github.com/hermannhahn/gemini-cli-scheduler/topics)
+
+An MCP extension for Gemini CLI that provides a powerful task scheduler and automated reminder system.
+
+## 🛠️ Professional Architecture
+
+The project follows high-end software development standards (TypeScript & Node.js):
+
+- **Modular TypeScript**: Built with strong typing for maximum reliability and ease of maintenance.
+- **Optimized Bundling**: Uses `webpack` to generate a high-performance, self-contained `tool_code.js`.
+- **Linting & Quality**: Enforced by `ESLint` and `TypeScript-ESLint` to maintain clean, idiomatic code.
+- **Task Management**: Powered by the robust `node-schedule` library for precise cron-like or date-based execution.
+- **Local Persistence**: Full state recovery across sessions via local JSON storage.
 
 ## 🚀 Features
 
 - **Flexible Scheduling:** Schedule prompts or commands for the future using `schedule_task`.
 - **Executor Selection:** Choose between `gemini` (standard), `jules` (complex tasks), or `shell` (direct commands).
 - **Monitoring & Quotas:** Real-time task monitoring and Jules daily usage limits.
-- **Local Persistence:** Tasks and configuration are saved in the extension directory, ensuring persistence across sessions.
-- **Autonomous Execution:** When the time is reached, the scheduler executes the task using the specified executor and enabled extensions.
+- **Autonomous Execution:** Tasks execute using the specified model and context, even when you're not interacting.
+
+## 📋 Prerequisites
+
+1.  **Node.js 20+**
+2.  **npm**
+3.  **Git**
+
+## 🔧 Installation and Setup
+
+To set up the development environment:
+```bash
+npm install
+npx webpack
+```
+
+### Installation in Gemini CLI
+
+```bash
+gemini extensions install https://github.com/hermannhahn/gemini-cli-scheduler.git
+```
 
 ## 🛠️ Available Tools
 
-- **`schedule_task`**: Schedule a task at a specific date/time or relative interval.
-- **`view_task_log`**: Read the execution logs and results of a completed task.
-- **`list_tasks`**: List all tasks (pending, completed, cancelled) and view system status.
-- **`get_system_time`**: Check the current system time to coordinate scheduling.
+- **`schedule_task`**: Schedule a task at a specific date/time or relative interval (e.g., "in 5 minutes").
+- **`view_task_log`**: Read the execution results of a completed task.
+- **`list_tasks`**: List all tasks (pending, completed, cancelled) and system status.
+- **`get_system_time`**: Check current system time to coordinate scheduling.
 - **`cancel_task`**: Cancel a pending task by its ID or Name.
 - **`set_jules_limit`**: Configure the daily quota for the `jules` executor.
 
-## 📖 How to Use
+## 📖 Best Practices
 
-### Schedule a Task
+- **Delegation**: Use `schedule_task` for background work. It runs independently.
+- **Executor Choice**: Use `gemini` (fast), `jules` (complex tasks), or `shell` (simple OS commands).
+- **Monitoring**: Set `wait_for_completion: false` for background tasks and check them later with `list_tasks`.
 
-> Schedule a reminder for the 23rd at 8 AM with the message "Review scheduler code" using name "review_code"
+## 🤝 Contributing
 
-### List Tasks
+Contributions are welcome! Please see the [CONTRIBUTING.md](./CONTRIBUTING.md) guide for instructions on our development workflow.
 
-> List all scheduled tasks in the scheduler
+## 📜 License
 
-### View Task Results
-
-> View the results of the task "review_code" using view_task_log
-
-### Cancel a Task
-
-> Cancel the task with name "review_code"
-
-## 💡 Best Practices
-
-To use this extension efficiently and save resources, follow these guidelines:
-
-### 1. Delegation
-- **`schedule_task`**: Use this to **DELEGATE** work. It runs independently. Use it for long-running tasks or background jobs.
-
-### 2. Choosing the Right Executor
-- **`gemini` (Default)**: Best for most tasks. Fast and efficient.
-- **`jules`**: ONLY for extremely complex, multi-step engineering tasks. It is expensive and has daily limits.
-- **`shell`**: Best for simple scripts or OS commands that don't need AI analysis.
-
-### 3. Monitoring
-In `schedule_task`, set `wait_for_completion: true` only if you need the output **immediately** to continue the current conversation. Otherwise, let it run in the background.
+This project is licensed under the **ISC License**. See the [LICENSE](./LICENSE) file for details.
