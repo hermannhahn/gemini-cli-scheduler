@@ -4,11 +4,9 @@
 [![License](https://img.shields.io/github/license/hermannhahn/gemini-cli-scheduler)](https://github.com/hermannhahn/gemini-cli-scheduler/blob/main/LICENSE)
 [![GitHub Topics](https://img.shields.io/github/topics/hermannhahn/gemini-cli-scheduler)](https://github.com/hermannhahn/gemini-cli-scheduler/topics)
 
-An MCP extension for Gemini CLI that provides a powerful task scheduler and automated reminder system.
+An MCP extension for Gemini CLI that provides a powerful task scheduler system.
 
 ## 🛠️ Professional Architecture
-
-The project follows high-end software development standards (TypeScript & Node.js):
 
 - **Modular TypeScript**: Built with strong typing for maximum reliability and ease of maintenance.
 - **Optimized Bundling**: Uses `webpack` to generate a high-performance, self-contained `tool_code.js`.
@@ -25,13 +23,14 @@ The project follows high-end software development standards (TypeScript & Node.j
 
 ## 📋 Prerequisites
 
-1.  **Node.js 20+**
-2.  **npm**
-3.  **Git**
+1. **Node.js 20+**
+2. **npm**
+3. **Git**
 
 ## 🔧 Installation and Setup
 
 To set up the development environment:
+
 ```bash
 npm install
 npx webpack
