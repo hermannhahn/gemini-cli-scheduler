@@ -1,6 +1,6 @@
 {
 	"name": "gemini-cli-scheduler",
-	"version": "1.0.5",
+	"version": "1.0.6",
 	"description": "Powerful extension for scheduling tasks, shell commands, and reminders. Supports Jules, Gemini, and Ollama executors with relative time support.",
 	"keywords": [
 		"Scheduler",
