@@ -33,3 +33,10 @@ export interface CancelTaskArgs {
 export interface ViewTaskLogArgs {
 	taskName: string;
 }
+
+export interface ScheduleReminderArgs {
+	datetime: string;
+	message: string;
+	targetTimestamp?: number;
+	nonce?: string;
+}
