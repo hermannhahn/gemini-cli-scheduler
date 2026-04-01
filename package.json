@@ -36,7 +36,7 @@
 		"gemini-cli-voice": "https://github.com/hermannhahn/gemini-cli-voice"
 	},
 	"dependencies": {
-		"@modelcontextprotocol/sdk": "^1.28.0",
+		"@modelcontextprotocol/sdk": "^1.29.0",
 		"node-schedule": "^2.1.1"
 	},
 	"devDependencies": {
