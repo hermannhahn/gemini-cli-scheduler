@@ -1,6 +1,6 @@
 {
 	"name": "gemini-cli-scheduler",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"description": "Powerful extension for scheduling tasks, shell commands, and reminders. Supports Jules, Gemini, and Ollama executors with relative time support.",
 	"keywords": [
 		"Scheduler",
@@ -33,9 +33,7 @@
 	},
 	"gemini-dependencies": {
 		"gemini-cli-scheduler": "https://github.com/hermannhahn/gemini-cli-scheduler",
-		"gemini-cli-reminder": "https://github.com/hermannhahn/gemini-cli-reminder",
-		"gemini-cli-voice": "https://github.com/hermannhahn/gemini-cli-voice",
-		"superpowers": "https://github.com/obra/superpowers"
+		"gemini-cli-voice": "https://github.com/hermannhahn/gemini-cli-voice"
 	},
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.28.0",
