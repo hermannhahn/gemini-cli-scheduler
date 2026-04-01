@@ -28,12 +28,14 @@
 		"push:version": "git add . && node -e \"const v = require('./package.json').version; require('child_process').execSync('git commit -m \\\"chore: bump version to ' + v + '\\\"', {stdio: 'inherit'})\" && git push origin development",
 		"publish:release": "git push origin main --follow-tags && npm run push:release",
 		"push:release": "node -e \"const v = require('./package.json').version; require('child_process').execSync('gh release create v' + v + ' --generate-notes', {stdio: 'inherit'})\"",
-		"update": "echo 'Y' | gemini extension update gemini-cli-scheduler",
+		"update": "echo 'Y' | gemini extension update gemini-cli-scheduler && echo 'Restart Gemini CLI to apply the update.'",
 		"deploy": "git checkout main && git pull origin main && git merge development --no-edit && npm run lint && npx webpack && git add tool_code.js && git commit -m 'chore: build tool_code.js for release' || true && git push origin main && node -e \"const v = require('./package.json').version; require('child_process').execSync('git tag -f v' + v + ' && git push origin -f v' + v, {stdio: 'inherit'})\" && npm run push:release && npm run cleanup-releases && npm run update && git checkout development"
 	},
 	"gemini-dependencies": {
 		"gemini-cli-scheduler": "https://github.com/hermannhahn/gemini-cli-scheduler",
-		"gemini-cli-voice": "https://github.com/hermannhahn/gemini-cli-voice"
+		"gemini-cli-reminder": "https://github.com/hermannhahn/gemini-cli-reminder",
+		"gemini-cli-voice": "https://github.com/hermannhahn/gemini-cli-voice",
+		"superpowers": "https://github.com/obra/superpowers"
 	},
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.28.0",
