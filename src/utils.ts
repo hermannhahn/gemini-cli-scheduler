@@ -10,33 +10,63 @@ export function logToFile(message: string, specificLogPath = SYSTEM_LOG_PATH) {
 
 export function parseDateTime(datetime: string): Date {
 	const now = new Date();
-	let date = new Date(datetime);
+	let date: Date;
+
+	// Trim and lowercase for easier matching
+	const input = datetime.trim().toLowerCase();
 
 	// Relative time: "in 5 minutes", "in 1 hour", etc.
-	const relativeMatch = datetime.match(/in (\d+) (second|minute|hour|day)s?/i);
+	// Allow variants: "in 1 minute", "in 5 mins", "in 1 hr", etc.
+	const relativeMatch = input.match(/^in (\d+) (second|sec|minute|min|hour|hr|day)s?$/i);
 	if (relativeMatch) {
 		const amount = parseInt(relativeMatch[1]);
 		const unit = relativeMatch[2].toLowerCase();
 		date = new Date(now);
 
-		if (unit.startsWith("second")) date.setSeconds(now.getSeconds() + amount);
-		if (unit.startsWith("minute")) date.setMinutes(now.getMinutes() + amount);
-		if (unit.startsWith("hour")) date.setHours(now.getHours() + amount);
-		if (unit.startsWith("day")) date.setDate(now.getDate() + amount);
+		if (unit.startsWith("sec")) date.setSeconds(now.getSeconds() + amount);
+		else if (unit.startsWith("min")) date.setMinutes(now.getMinutes() + amount);
+		else if (unit.startsWith("hr") || unit.startsWith("hour")) date.setHours(now.getHours() + amount);
+		else if (unit.startsWith("day")) date.setDate(now.getDate() + amount);
 		return date;
 	}
 
-	// If datetime is just HH:mm:ss, assume today at that time
-	if (datetime.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
-		const [hours, minutes, seconds] = datetime.split(":").map(Number);
+	// Direct relative time: "10 minutes", "5 hours" (assuming "in X")
+	const directRelativeMatch = input.match(/^(\d+) (second|sec|minute|min|hour|hr|day)s?$/i);
+	if (directRelativeMatch) {
+		const amount = parseInt(directRelativeMatch[1]);
+		const unit = directRelativeMatch[2].toLowerCase();
 		date = new Date(now);
-		date.setHours(hours || 0, minutes || 0, seconds || 0, 0);
+
+		if (unit.startsWith("sec")) date.setSeconds(now.getSeconds() + amount);
+		else if (unit.startsWith("min")) date.setMinutes(now.getMinutes() + amount);
+		else if (unit.startsWith("hr") || unit.startsWith("hour")) date.setHours(now.getHours() + amount);
+		else if (unit.startsWith("day")) date.setDate(now.getDate() + amount);
+		return date;
+	}
+
+	// If datetime is just HH:mm:ss or HH:mm, assume today at that time
+	const timeMatch = input.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+	if (timeMatch) {
+		const hours = parseInt(timeMatch[1]);
+		const minutes = parseInt(timeMatch[2]);
+		const seconds = parseInt(timeMatch[3] || "0");
+		
+		date = new Date(now);
+		date.setHours(hours, minutes, seconds, 0);
 		
 		// If the time has already passed today, assume tomorrow
 		if (date <= now) {
 			date.setDate(date.getDate() + 1);
 		}
+		return date;
 	}
+
+	// Try native Date parsing for absolute dates
+	date = new Date(datetime);
+	if (isNaN(date.getTime())) {
+		throw new Error(`Invalid date format: "${datetime}". Please use 'in X minutes', 'HH:mm', or an ISO date string.`);
+	}
+
 	return date;
 }
 
