@@ -3,7 +3,7 @@
 [![Gemini CLI Extension](https://img.shields.io/badge/Gemini%20CLI-Extension-blue?logo=google-gemini&logoColor=white)](https://geminicli.com/extensions/gemini-cli-scheduler)
 [![Version](https://img.shields.io/github/v/release/hermannhahn/gemini-cli-scheduler)](https://github.com/hermannhahn/gemini-cli-scheduler/releases)
 [![License](https://img.shields.io/github/license/hermannhahn/gemini-cli-scheduler)](https://github.com/hermannhahn/gemini-cli-scheduler/blob/main/LICENSE)
-[![GitHub Topics](https://img.shields.io/github/topics/hermannhahn/gemini-cli-scheduler)](https://github.com/hermannhahn/gemini-cli-scheduler/topics)
+[![GitHub Topics](https://img.shields.io/github/topics/hermannhahn/gemini-cli-scheduler)](https://github.com/hermannhahn/gemini-cli-scheduler)
 
 An MCP extension for Gemini CLI that provides a powerful task scheduler system.
 
