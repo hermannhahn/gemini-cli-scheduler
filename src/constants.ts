@@ -15,6 +15,7 @@ export const PERSISTENCE_PATH =
 export const LOGS_DIR = path.join(PERSISTENT_GEMINI_DIR, "logs");
 export const SYSTEM_LOG_PATH = path.join(PERSISTENT_GEMINI_DIR, "scheduler.log");
 export const CONFIG_PATH = path.join(PERSISTENT_GEMINI_DIR, "config.json");
+export const DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT = 300; // 5 minutes in seconds
 
 // Ensure directories exist
 if (!fs.existsSync(LOGS_DIR)) {

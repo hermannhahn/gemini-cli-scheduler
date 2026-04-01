@@ -6,17 +6,31 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import fs from "fs";
 import path from "path";
-import { Task, ScheduleTaskArgs, SetJulesLimitArgs, CancelTaskArgs, ViewTaskLogArgs } from "./types";
-import { LOGS_DIR } from "./constants";
+import {
+	Task,
+	ScheduleTaskArgs,
+	SetJulesLimitArgs,
+	CancelTaskArgs,
+	ViewTaskLogArgs,
+} from "./types";
+import {
+	LOGS_DIR,
+	DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT,
+} from "./constants";
 import { tasks, config } from "./state";
 import { logToFile, parseDateTime, detectEnabledExtensions } from "./utils";
 import { loadTasks, loadConfig, saveTasks, saveConfig } from "./persistence";
-import { getDailyJulesUsage, scheduleTask, waitForTaskCompletion, cancelTask } from "./scheduler";
+import {
+	getDailyJulesUsage,
+	scheduleTask,
+	waitForTaskCompletion,
+	cancelTask,
+} from "./scheduler";
 
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "1.0.0",
+		version: "1.0.1",
 	},
 
 	{
@@ -33,13 +47,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 				name: "schedule_task",
 				description: `Schedule a task to be executed at a specific date and time.
 
-MANDATORY: Use this tool ONLY to DELEGATE work to a separate process or a different agent.
-- If you do NOT set 'wait_for_completion' to true, you will NOT see the results of this task in this conversation.
-
-Use the 'executor' parameter to control which agent or model executes the task:
-- **"jules"**: ONLY for extremely complex, multi-step engineering tasks (e.g., refactoring). DO NOT use for simple monitoring or scripts. Wastes daily quota.
-- **"gemini"**: For simple, atomic tasks using the default system model.
-- **"shell"**: For direct OS commands that don't need AI analysis.`,
+MANDATORY: Use this tool ONLY to DELEGATE work to a separate process or a different agent. Use 'view_task_log' to check results and logs.
+- If you do NOT set 'wait_for_completion' to true, you will NOT wait for the task to complete.`,
 				inputSchema: {
 					type: "object",
 					properties: {
@@ -65,7 +74,7 @@ Use the 'executor' parameter to control which agent or model executes the task:
 						wait_for_completion: {
 							type: "boolean",
 							description:
-								"MANDATORY TRUE if you need the task result to decide your next step NOW. If false, the task runs in the background and you won't see its output.",
+								"Set TRUE if you need the task result to decide your next step NOW. Waits up to 5 minutes.",
 							default: false,
 						},
 						executor: {
@@ -73,10 +82,11 @@ Use the 'executor' parameter to control which agent or model executes the task:
 							description:
 								"Execution engine. 'jules' (complex/expensive), 'gemini' (simple/standard), 'shell' (direct command).",
 							default: "gemini",
-						},					},
-						required: ["datetime", "message", "name"],
 						},
-						},
+					},
+					required: ["datetime", "message", "name"],
+				},
+			},
 			{
 				name: "view_task_log",
 				description: "Read results from a completed task.",
@@ -155,9 +165,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				executor,
 			} = args as unknown as ScheduleTaskArgs;
 
+			const executeAt = parseDateTime(datetime);
+
+			// Restriction: If wait_for_completion is true, do not allow scheduling more than 5 minutes in the future
+			if (wait_for_completion) {
+				const now = new Date();
+				const diffSeconds = (executeAt.getTime() - now.getTime()) / 1000;
+				if (diffSeconds > DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT) {
+					return {
+						content: [
+							{
+								type: "text",
+								text: `CRITICAL: You cannot use 'wait_for_completion=true' for tasks scheduled more than 5 minutes in the future (requested: ${Math.round(diffSeconds / 60)} minutes). \n\nStrategy: Schedule the task with 'wait_for_completion=false' AND use 'schedule_reminder' to check the results with 'view_task_log' at the appropriate time.`,
+							},
+						],
+						isError: true,
+					};
+				}
+			}
+
 			// Check daily limit if using Jules
 			if (executor === "jules") {
-				const executeAt = parseDateTime(datetime);
 				const usage = getDailyJulesUsage(executeAt);
 				if (usage >= config.julesDailyLimit) {
 					return {
@@ -198,7 +226,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 			);
 
 			if (wait_for_completion) {
-				const result = await waitForTaskCompletion(taskName, 600);
+				const result = await waitForTaskCompletion(
+					taskName,
+					DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT,
+				);
 				if (result.success) {
 					return {
 						content: [
@@ -257,10 +288,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 								julesQuota: {
 									limit: config.julesDailyLimit,
 									todayUsage: todayUsage,
-									remaining: Math.max(
-										0,
-										config.julesDailyLimit - todayUsage,
-									),
+									remaining: Math.max(0, config.julesDailyLimit - todayUsage),
 								},
 								tasks,
 							},
@@ -286,9 +314,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 			const cancelled = cancelTask(idOrName);
 			if (cancelled) {
 				return {
-					content: [
-						{ type: "text", text: `Task ${idOrName} cancelled.` },
-					],
+					content: [{ type: "text", text: `Task ${idOrName} cancelled.` }],
 				};
 			} else {
 				return {

@@ -6,8 +6,8 @@ Thank you for your interest in contributing to our Gemini CLI extensions! We fol
 
 We use a two-branch strategy for all extensions:
 
-1.  **`development`**: This is the main development branch. All active work, new features, and bug fixes must be performed here.
-2.  **`main`**: This branch contains the stable, production-ready code. Releases are created from this branch.
+1. **`development`**: This is the main development branch. All active work, new features, and bug fixes must be performed here.
+2. **`main`**: This branch contains the stable, production-ready code. Releases are created from this branch.
 
 ### 📋 Prerequisites
 
@@ -17,15 +17,18 @@ We use a two-branch strategy for all extensions:
 
 ### 🚀 Getting Started
 
-1.  **Fork** the repository and clone it locally.
-2.  Switch to the `development` branch:
-    ```bash
-    git checkout development
-    ```
-3.  Install dependencies:
-    ```bash
-    npm install
-    ```
+1. **Fork** the repository and clone it locally.
+2. Switch to the `development` branch:
+
+```bash
+git checkout development
+```
+
+### 📋 Install dependencies
+
+```bash
+npm install
+```
 
 ## 🧪 Quality Standards
 
@@ -37,15 +40,17 @@ Before submitting any changes, ensure:
 
 ## 🏷️ Versioning & Deployment
 
-We use [Semantic Versioning](https://semver.org/). 
+We use [Semantic Versioning](https://semver.org/).
 
-1.  **Version Bump**: Always perform version bumps on the `development` branch using:
-    ```bash
-    npm run update:version
-    ```
-    This script automatically synchronizes versions across `package.json`, `gemini-extension.json`, and source files.
+**Version Bump**: Always perform version bumps on the `development` branch using:
 
-2.  **Deployment**: Deployments to `main` and GitHub Releases are handled by the `npm run deploy` script, which automates merging, tagging, and publishing.
+This script automatically synchronizes versions across `package.json`, `gemini-extension.json`, and source files.
+
+```bash
+npm run update:version
+```
+
+**Deployment**: Deployments to `main` and GitHub Releases are handled by the `npm run deploy` script, which automates merging, tagging, and publishing.
 
 ## 🤝 Community
 

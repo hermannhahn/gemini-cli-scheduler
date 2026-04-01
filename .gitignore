@@ -4,9 +4,7 @@ __pycache__/
 .vscode/
 *.code-workspace
 node_modules/
-scripts/
 tasks.json
 logs/
 package-lock.json
 *.log
-
