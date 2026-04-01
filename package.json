@@ -33,7 +33,6 @@
 	},
 	"gemini-dependencies": {
 		"gemini-cli-scheduler": "https://github.com/hermannhahn/gemini-cli-scheduler",
-		"gemini-cli-reminder": "https://github.com/hermannhahn/gemini-cli-reminder",
 		"gemini-cli-voice": "https://github.com/hermannhahn/gemini-cli-voice"
 	},
 	"dependencies": {
