@@ -13,7 +13,10 @@ import {
 	CancelTaskArgs,
 	ViewTaskLogArgs,
 } from "./types";
-import { LOGS_DIR } from "./constants";
+import {
+	LOGS_DIR,
+	DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT,
+} from "./constants";
 import { tasks, config } from "./state";
 import { logToFile, parseDateTime, detectEnabledExtensions } from "./utils";
 import { loadTasks, loadConfig, saveTasks, saveConfig } from "./persistence";
@@ -71,7 +74,7 @@ MANDATORY: Use this tool ONLY to DELEGATE work to a separate process or a differ
 						wait_for_completion: {
 							type: "boolean",
 							description:
-								"Set TRUE if you need the task result to decide your next step NOW.",
+								"Set TRUE if you need the task result to decide your next step NOW. Waits up to 5 minutes.",
 							default: false,
 						},
 						executor: {
@@ -162,9 +165,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				executor,
 			} = args as unknown as ScheduleTaskArgs;
 
+			const executeAt = parseDateTime(datetime);
+
+			// Restriction: If wait_for_completion is true, do not allow scheduling more than 5 minutes in the future
+			if (wait_for_completion) {
+				const now = new Date();
+				const diffSeconds = (executeAt.getTime() - now.getTime()) / 1000;
+				if (diffSeconds > DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT) {
+					return {
+						content: [
+							{
+								type: "text",
+								text: `CRITICAL: You cannot use 'wait_for_completion=true' for tasks scheduled more than 5 minutes in the future (requested: ${Math.round(diffSeconds / 60)} minutes). \n\nStrategy: Schedule the task with 'wait_for_completion=false' AND use 'schedule_reminder' to check the results with 'view_task_log' at the appropriate time.`,
+							},
+						],
+						isError: true,
+					};
+				}
+			}
+
 			// Check daily limit if using Jules
 			if (executor === "jules") {
-				const executeAt = parseDateTime(datetime);
 				const usage = getDailyJulesUsage(executeAt);
 				if (usage >= config.julesDailyLimit) {
 					return {
@@ -205,7 +226,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 			);
 
 			if (wait_for_completion) {
-				const result = await waitForTaskCompletion(taskName, 600);
+				const result = await waitForTaskCompletion(
+					taskName,
+					DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT,
+				);
 				if (result.success) {
 					return {
 						content: [
