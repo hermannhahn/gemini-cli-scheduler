@@ -5,5 +5,4 @@ __pycache__/
 node_modules/
 tasks.json
 logs/
-package-lock.json
 *.log
