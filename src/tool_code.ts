@@ -165,9 +165,27 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 				executor,
 			} = args as unknown as ScheduleTaskArgs;
 
+			const executeAt = parseDateTime(datetime);
+
+			// Restriction: If wait_for_completion is true, do not allow scheduling more than 5 minutes in the future
+			if (wait_for_completion) {
+				const now = new Date();
+				const diffSeconds = (executeAt.getTime() - now.getTime()) / 1000;
+				if (diffSeconds > DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT) {
+					return {
+						content: [
+							{
+								type: "text",
+								text: `CRITICAL: You cannot use 'wait_for_completion=true' for tasks scheduled more than 5 minutes in the future (requested: ${Math.round(diffSeconds / 60)} minutes). \n\nStrategy: Schedule the task with 'wait_for_completion=false' AND use 'schedule_reminder' to check the results with 'view_task_log' at the appropriate time.`,
+							},
+						],
+						isError: true,
+					};
+				}
+			}
+
 			// Check daily limit if using Jules
 			if (executor === "jules") {
-				const executeAt = parseDateTime(datetime);
 				const usage = getDailyJulesUsage(executeAt);
 				if (usage >= config.julesDailyLimit) {
 					return {
