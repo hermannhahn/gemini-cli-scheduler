@@ -36,11 +36,13 @@ jobs:
     needs: build-and-test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Necessário para criar releases e tags
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Necessário para operações git no script deploy
+          fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Node.js
@@ -52,7 +54,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Deploy
-        run: npm run deploy
+      - name: Create Release and Tag
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -e "console.log(require('./package.json').version)")
+          echo "Version: $VERSION"
+          # Verifica se a tag já existe
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION already exists. Skipping tag creation."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git tag "v$VERSION"
+            git push origin "v$VERSION"
+          fi
+          # Cria o release se não existir
+          if ! gh release view "v$VERSION" >/dev/null 2>&1; then
+            gh release create "v$VERSION" --generate-notes
+          else
+            echo "Release v$VERSION already exists."
+          fi
