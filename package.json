@@ -1,6 +1,6 @@
 {
 	"name": "gemini-cli-scheduler",
-	"version": "1.0.6",
+	"version": "1.0.7",
 	"description": "Powerful extension for scheduling tasks, shell commands, and reminders. Supports Jules, Gemini, and Ollama executors with relative time support.",
 	"keywords": [
 		"Scheduler",
@@ -23,17 +23,12 @@
 		"lint": "eslint 'src/**/*.ts' --fix",
 		"test": "echo \"No tests specified\" && exit 0",
 		"webpack": "npx webpack",
-		"update:version": "npm run lint && npm version patch --no-git-tag-version && node scripts/update-version.js && npx webpack && npm run push:version",
+		"build": "npx webpack",
 		"cleanup-releases": "node scripts/cleanup-releases.js",
+		"update:version": "npm run lint && npm version patch --no-git-tag-version && node scripts/update-version.js && npx webpack && npm run push:version",
 		"push:version": "git add . && node -e \"const v = require('./package.json').version; require('child_process').execSync('git commit -m \\\"chore: bump version to ' + v + '\\\"', {stdio: 'inherit'})\" && git push origin development",
-		"publish:release": "git push origin main --follow-tags && npm run push:release",
 		"push:release": "node -e \"const v = require('./package.json').version; require('child_process').execSync('gh release create v' + v + ' --generate-notes', {stdio: 'inherit'})\"",
-		"update": "echo 'Y' | gemini extension update gemini-cli-scheduler && echo 'Restart Gemini CLI to apply the update.'",
-		"deploy": "git checkout main && git pull origin main && git merge development --no-edit && npm run lint && npx webpack && git add tool_code.js && git commit -m 'chore: build tool_code.js for release' || true && git push origin main && node -e \"const v = require('./package.json').version; require('child_process').execSync('git tag -f v' + v + ' && git push origin -f v' + v, {stdio: 'inherit'})\" && npm run push:release && npm run update && git checkout development"
-	},
-	"gemini-dependencies": {
-		"gemini-cli-scheduler": "https://github.com/hermannhahn/gemini-cli-scheduler",
-		"gemini-cli-voice": "https://github.com/hermannhahn/gemini-cli-voice"
+		"deploy": "git checkout main && git pull origin main && npm run lint && npx webpack && git add tool_code.js && git commit -m 'chore: build tool_code.js for release' || true && git push origin main && node -e \"const v = require('./package.json').version; require('child_process').execSync('git tag -f v' + v + ' && git push origin -f v' + v, {stdio: 'inherit'})\" && npm run push:release"
 	},
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.28.0",
