@@ -39,7 +39,7 @@
 		"@types/node": "^20.19.37",
 		"@types/node-schedule": "^2.1.8",
 		"eslint": "^10.0.3",
-		"ts-loader": "^9.5.4",
+		"ts-loader": "^9.5.7",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "^8.57.1",
 		"webpack": "^5.105.2",
