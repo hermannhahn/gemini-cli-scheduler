@@ -5,7 +5,7 @@
 		"target": "es2018",
 		"moduleResolution": "node",
 		"ignoreDeprecations": "5.0",
-		"outDir": "./",
+		"outDir": "./dist",
 		"rootDir": "src/",
 		"strict": true,
 		"esModuleInterop": true,
