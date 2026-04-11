@@ -18,9 +18,9 @@ module.exports = {
 	},
 	output: {
 		filename: "tool_code.js",
-		path: path.resolve(__dirname),
+		path: path.resolve(__dirname, "dist"),
 		libraryTarget: "commonjs",
-		clean: false, // Clean the dist folder before each build
+		clean: true, // Clean the dist folder before each build
 	},
 	optimization: {
 		minimize: true,
