@@ -32,7 +32,7 @@ import {
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "1.1.1",
+		version: "1.1.2",
 	},
 
 	{
