@@ -1,6 +1,6 @@
 {
 	"name": "gemini-cli-scheduler",
-	"version": "1.0.8",
+	"version": "1.1.1",
 	"description": "Powerful extension for scheduling tasks, shell commands, and reminders. Supports Jules, Gemini, and Ollama executors with relative time support.",
 	"keywords": [
 		"Scheduler",
@@ -32,7 +32,7 @@
 		"update:version": "npm run lint && npm version patch --no-git-tag-version && node scripts/update-version.js && webpack && npm run push:version",
 		"push:version": "git add . && node -e \"const v = require('./package.json').version; require('child_process').execSync('git commit -m \\\"chore: bump version to ' + v + '\\\"', {stdio: 'inherit'})\" && git push origin development",
 		"push:release": "node -e \"const v = require('./package.json').version; require('child_process').execSync('gh release create v' + v + ' --generate-notes', {stdio: 'inherit'})\"",
-		"deploy": "git checkout main && git pull origin main && npm run lint && webpack && git add dist/tool_code.js && git commit -m 'chore: build tool_code.js for release' || true && git push origin main && node -e \"const v = require('./package.json').version; require('child_process').execSync('git tag -f v' + v + ' && git push origin -f v' + v, {stdio: 'inherit'})\" && npm run push:release"
+		"deploy": "node scripts/deploy.js"
 	},
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.28.0",

@@ -3,7 +3,7 @@ export interface Task {
 	datetime: string;
 	message: string;
 	name: string;
-	status: "pending" | "completed" | "missed" | "cancelled" | "missed";
+	status: "pending" | "completed" | "missed" | "cancelled" | "failed";
 	logFile: string;
 	extensions: string[];
 	executor: string;

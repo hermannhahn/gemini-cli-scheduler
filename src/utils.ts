@@ -8,6 +8,10 @@ export function logToFile(message: string, specificLogPath = SYSTEM_LOG_PATH) {
 	fs.appendFileSync(specificLogPath, logMessage);
 }
 
+export function sanitizeFilename(name: string): string {
+	return name.replace(/[<>:"/\\|?*]/g, "_");
+}
+
 export function parseDateTime(datetime: string): Date {
 	const now = new Date();
 	let date: Date;

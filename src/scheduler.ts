@@ -5,7 +5,7 @@ import { spawn } from "child_process";
 import { Task } from "./types";
 import { LOGS_DIR } from "./constants";
 import { tasks, activeJobs } from "./state";
-import { logToFile, parseDateTime } from "./utils";
+import { logToFile, parseDateTime, sanitizeFilename } from "./utils";
 import { saveTasks } from "./persistence";
 
 export function getDailyJulesUsage(executeAt: Date): number {
@@ -37,9 +37,14 @@ export function scheduleTask(task: Task) {
 	);
 
 	const job = schedule.scheduleJob(executeAt, function () {
-		logToFile(`SYSTEM: Starting task "${task.name}"`);
-		executeHeadless(task);
-		activeJobs.delete(task.id);
+		try {
+			logToFile(`SYSTEM: Starting task "${task.name}"`);
+			executeHeadless(task);
+		} catch (error) {
+			logToFile(`ERROR: Failed to execute task "${task.name}": ${error instanceof Error ? error.message : String(error)}`);
+		} finally {
+			activeJobs.delete(task.id);
+		}
 	});
 
 	if (job) {
@@ -48,9 +53,23 @@ export function scheduleTask(task: Task) {
 }
 
 export function executeHeadless(task: Task) {
-	const taskLogPath = path.join(LOGS_DIR, `${task.name}.log`);
+	const safeName = sanitizeFilename(task.name);
+	const taskLogPath = path.join(LOGS_DIR, `${safeName}.log`);
 	task.logFile = taskLogPath;
-	const logStream = fs.createWriteStream(taskLogPath, { flags: "w" });
+	
+	let logStream: fs.WriteStream;
+	try {
+		logStream = fs.createWriteStream(taskLogPath, { flags: "w" });
+		logStream.on("error", (error) => {
+			logToFile(`ERROR: Log stream for task "${task.name}" failed: ${error.message}`);
+		});
+	} catch (error) {
+		logToFile(`ERROR: Could not create log file for task "${task.name}": ${error instanceof Error ? error.message : String(error)}`);
+		task.status = "failed";
+		saveTasks();
+		return;
+	}
+
 	const timestamp = new Date().toISOString();
 
 	logStream.write(`--- START TASK: ${task.name} (${timestamp}) ---
@@ -71,6 +90,11 @@ export function executeHeadless(task: Task) {
 
 		child.stderr.on("data", (data) => {
 			logStream.write(`[STDERR] ${data}`);
+		});
+
+		child.on("error", (error) => {
+			logStream.write(`\n[SPAWN ERROR] ${error.message}\n`);
+			logToFile(`ERROR: Shell task "${task.name}" spawn error: ${error.message}`);
 		});
 
 		child.on("close", (code) => {
@@ -149,6 +173,11 @@ export function executeHeadless(task: Task) {
 		logStream.write(`[STDERR] ${data}`);
 	});
 
+	child.on("error", (error) => {
+		logStream.write(`\n[SPAWN ERROR] ${error.message}\n`);
+		logToFile(`ERROR: Task "${task.name}" spawn error: ${error.message}`);
+	});
+
 	child.on("close", (code) => {
 		const endTimestamp = new Date().toISOString();
 		logStream.write(
@@ -166,7 +195,8 @@ export async function waitForTaskCompletion(
 	taskName: string,
 	timeout: number,
 ): Promise<{ success: boolean; logs?: string; error?: string }> {
-	const taskLogPath = path.join(LOGS_DIR, `${taskName}.log`);
+	const safeName = sanitizeFilename(taskName);
+	const taskLogPath = path.join(LOGS_DIR, `${safeName}.log`);
 	const endMarker = `--- END TASK: ${taskName}`;
 
 	return new Promise((resolve) => {
@@ -174,19 +204,23 @@ export async function waitForTaskCompletion(
 
 		const checkInterval = setInterval(() => {
 			if (fs.existsSync(taskLogPath)) {
-				const stats = fs.statSync(taskLogPath);
-				const fd = fs.openSync(taskLogPath, "r");
-				const buffer = Buffer.alloc(stats.size);
-				fs.readSync(fd, buffer, 0, stats.size, 0);
-				fs.closeSync(fd);
+				try {
+					const stats = fs.statSync(taskLogPath);
+					const fd = fs.openSync(taskLogPath, "r");
+					const buffer = Buffer.alloc(stats.size);
+					fs.readSync(fd, buffer, 0, stats.size, 0);
+					fs.closeSync(fd);
 
-				const content = buffer.toString();
-				if (content.includes(endMarker)) {
-					clearInterval(checkInterval);
-					resolve({
-						success: true,
-						logs: content,
-					});
+					const content = buffer.toString();
+					if (content.includes(endMarker)) {
+						clearInterval(checkInterval);
+						resolve({
+							success: true,
+							logs: content,
+						});
+					}
+				} catch {
+					// File might be busy or locked, just wait for next tick
 				}
 			}
 
