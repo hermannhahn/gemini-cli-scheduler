@@ -20,7 +20,7 @@ import {
 	DEFAULT_WAIT_FOR_COMPLETION_TIMEOUT,
 } from "./constants";
 import { tasks, config } from "./state";
-import { logToFile, parseDateTime, detectEnabledExtensions } from "./utils";
+import { logToFile, parseDateTime, detectEnabledExtensions, sanitizeFilename } from "./utils";
 import { loadTasks, loadConfig, saveTasks, saveConfig } from "./persistence";
 import {
 	getDailyJulesUsage,
@@ -32,7 +32,7 @@ import {
 const server = new Server(
 	{
 		name: "gemini-cli-scheduler",
-		version: "1.0.8",
+		version: "1.1.1",
 	},
 
 	{
@@ -267,7 +267,7 @@ Use:
 				message,
 				name: taskName,
 				status: "pending",
-				logFile: path.join(LOGS_DIR, `${taskName}.log`),
+				logFile: path.join(LOGS_DIR, `${sanitizeFilename(taskName)}.log`),
 				extensions: taskExtensions,
 				executor: executor || "gemini",
 			};
@@ -317,7 +317,8 @@ ${result.logs}` }] };
 		}
 		case "view_task_log": {
 			const { taskName } = args as unknown as ViewTaskLogArgs;
-			const taskLogPath = path.join(LOGS_DIR, `${taskName}.log`);
+			const safeName = sanitizeFilename(taskName);
+			const taskLogPath = path.join(LOGS_DIR, `${safeName}.log`);
 			if (fs.existsSync(taskLogPath)) {
 				const content = fs.readFileSync(taskLogPath, "utf8");
 				return { content: [{ type: "text", text: `Logs for "${taskName}":

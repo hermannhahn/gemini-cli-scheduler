@@ -3,6 +3,7 @@ __pycache__/
 .vscode/
 *.code-workspace
 node_modules/
+dist/
 tasks.json
 logs/
 *.log
