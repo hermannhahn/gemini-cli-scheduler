@@ -31,7 +31,7 @@ run('npm run lint');
 run('npm run build');
 
 // 3. Commit build artifacts
-run('git add dist/tool_code.js');
+run('git add -f dist/tool_code.js');
 // Ignore error if nothing to commit (already up to date)
 run(`git commit -m "chore: build tool_code.js for release v${version}"`, true);
 
